@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 2 | 支付异常与资损防控</title>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --blue: #2563eb; --blue-bg: #eff6ff;
+      --amber: #d97706; --amber-bg: #fffbeb;
+      --red: #dc2626; --red-bg: #fef2f2;
+      --green: #059669; --green-bg: #ecfdf5;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg); color: var(--text); padding: 24px 16px 60px; line-height: 1.65;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; }
+    .topbar a { text-decoration: none; color: var(--muted); font-weight: 600; }
+    .topbar a:hover { color: var(--text); }
+
+    .section {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 26px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    }
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+    h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    h3 { font-size: 15px; font-weight: 700; margin: 18px 0 10px; }
+    .subtitle { font-size: 14px; color: var(--muted); }
+
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 13.5px; }
+    th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+    th { background: #f1f5f9; font-weight: 700; }
+
+    .recon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+    .recon-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 13px; }
+    .recon-card strong { display: block; font-size: 14px; margin-bottom: 4px; }
+
+    /* DFD Styles */
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 20px; }
+    .tab { padding: 7px 15px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+    .diagram { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
+    .node { background: var(--bg); border: 2px solid var(--border); border-radius: 12px; padding: 14px; text-align: center; transition: all 0.25s; }
+    .node-title { font-weight: 700; font-size: 14px; }
+    .node-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .node.hl-blue { border-color: var(--blue); background: var(--blue-bg); transform: translateY(-2px); }
+    .node.hl-amber { border-color: var(--amber); background: var(--amber-bg); transform: translateY(-2px); }
+    .node.hl-red { border-color: var(--red); background: var(--red-bg); transform: translateY(-2px); }
+    .node.hl-green { border-color: var(--green); background: var(--green-bg); transform: translateY(-2px); }
+
+    .banner { border-radius: 12px; padding: 16px 20px; margin-bottom: 18px; border-left: 5px solid var(--blue); background: var(--blue-bg); }
+    .banner.amber { border-left-color: var(--amber); background: var(--amber-bg); }
+    .banner.red { border-left-color: var(--red); background: var(--red-bg); }
+    .banner.green { border-left-color: var(--green); background: var(--green-bg); }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .badge { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; color: #fff; background: var(--blue); }
+    .banner.amber .badge { background: var(--amber); }
+    .banner.red .badge { background: var(--red); }
+    .banner.green .badge { background: var(--green); }
+    .code-tag { font-family: ui-monospace, monospace; font-size: 12px; background: rgba(15,23,42,0.08); padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+    .step-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .step-detail { font-size: 14px; color: #334155; }
+
+    .state-grid { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 12px; margin-bottom: 20px; }
+    .stat-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: #fff; }
+    .stat-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .stat-val { font-size: 20px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .db-val { font-family: ui-monospace, monospace; font-size: 13px; font-weight: 600; margin-top: 6px; }
+
+    .controls { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
+    .dots { display: flex; gap: 8px; }
+    .dot { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .dot.active { background: var(--text); color: #fff; border-color: var(--text); }
+    .btns { display: flex; gap: 8px; }
+    button.btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+    button.btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .cmd-box {
+      background: #0f172a; color: #e2e8f0; padding: 12px 16px; border-radius: 8px;
+      font-family: ui-monospace, monospace; font-size: 13px; margin-top: 12px;
+    }
+    @media (max-width: 700px) { .diagram, .state-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="../index.html">← 返回教程总目录</a>
+      <a href="../module-01-cms-basics/index.html">← 回顾 Module 1</a>
+    </div>
+
+    <!-- Part 1: Mental Models -->
+    <div class="section">
+      <h1>Module 2：支付异常与资损防控</h1>
+      <p class="subtitle">生产环境的资损几乎从不发生在正常流程，而是集中在网络超时、报文乱序、重复回调与 T+1 清算对账。</p>
+
+      <h3>1. 超时冲正（0420 Reversal）的三大致命边界</h3>
+      <table>
+        <thead>
+          <tr><th>异常场景</th><th>常见资损 Bug</th><th>正确测试预期</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>正常超时冲正</strong></td><td>冻结额度未释放，用户余额永久挂死</td><td>匹配原交易唯一键，释放冻结额度并返回 <code>0430</code></td></tr>
+          <tr><td><strong>冲正乱序先到</strong></td><td><code>0420</code> 查无原单直接丢弃，迟到的 <code>0100</code> 扣款成功</td><td>写入 <code>PRE_REVERSED</code> 占位记录，拦截后续迟到的 <code>0100</code></td></tr>
+          <tr><td><strong>重复冲正（幂等）</strong></td><td>连续收到两条 <code>0420</code>，给用户退了两次钱</td><td>识别已冲正状态，直接返回成功但绝不重复动账</td></tr>
+        </tbody>
+      </table>
+
+      <h3>2. T+1 清算对账（Reconciliation）四大差异</h3>
+      <div class="recon-grid">
+        <div class="recon-card"><strong>本地长款（Local Long）</strong>本地扣了、卡组织未清算（可能冲正漏处理或商户未请款）。</div>
+        <div class="recon-card"><strong>本地短款（Local Short）</strong>卡组织扣了、本地无记录（高危资损，如漏记账或离线交易）。</div>
+        <div class="recon-card"><strong>金额不一致（Mismatch）</strong>双方都有记录但金额不同（小费追加、外币汇率差额）。</div>
+        <div class="recon-card"><strong>重复清算（Duplicate）</strong>清算文件内同一笔交易出现两次，需幂等拦截。</div>
+      </div>
+    </div>
+
+    <!-- Part 2: Interactive DFD -->
+    <div class="section">
+      <h2>交互式分步 DFD：超时冲正（0420）、乱序与幂等防控</h2>
+      <p class="subtitle">初始余额：$500 ｜ 切换三大异常场景，观察发卡行如何防止“白扣钱”和“重复退款”</p>
+
+      <div class="tabs">
+        <button class="tab active" onclick="selectScenario('normal', this)">场景 A：正常超时冲正</button>
+        <button class="tab" onclick="selectScenario('outOfOrder', this)">场景 B：冲正乱序先到</button>
+        <button class="tab" onclick="selectScenario('duplicate', this)">场景 C：重复冲正（幂等）</button>
+      </div>
+
+      <div class="diagram">
+        <div class="node" id="n-pos"><div class="node-title">POS / 收单行</div><div class="node-sub">发起请求与超时监控</div></div>
+        <div class="node" id="n-net"><div class="node-title">卡组织 (Visa/MC)</div><div class="node-sub">路由转发与 0420 触发</div></div>
+        <div class="node" id="n-iss"><div class="node-title">发卡行核心 (CMS)</div><div class="node-sub">账务冻结、冲正与幂等表</div></div>
+      </div>
+
+      <div class="banner" id="banner">
+        <div class="meta">
+          <span class="badge" id="badge"></span>
+          <span class="code-tag" id="payload"></span>
+        </div>
+        <div class="step-title" id="title"></div>
+        <div class="step-detail" id="detail"></div>
+      </div>
+
+      <div class="state-grid">
+        <div class="stat-card"><div class="stat-label">可用余额 (Available)</div><div class="stat-val" id="v-avail">$500</div></div>
+        <div class="stat-card"><div class="stat-label">冻结金额 (Frozen)</div><div class="stat-val" id="v-frozen">$0</div></div>
+        <div class="stat-card"><div class="stat-label">发卡行交易流水表状态 (DB)</div><div class="db-val" id="v-db">无记录</div></div>
+      </div>
+
+      <div class="controls">
+        <div class="dots" id="dots"></div>
+        <div class="btns">
+          <button class="btn" id="btnPrev">上一步</button>
+          <button class="btn primary" id="btnNext">下一步</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Part 3: Python Exercise -->
+    <div class="section">
+      <h2>动手实践：Python T+1 清算自动对账脚本</h2>
+      <p class="subtitle">打开同目录下的 <code>reconcile_exercise.py</code>，使用 <code>Decimal</code> 补全双向对账逻辑并跑通全部断言：</p>
+      <div class="cmd-box">cd module-02-reconciliation &amp;&amp; python3 reconcile_exercise.py</div>
+    </div>
+  </div>
+
+  <script>
+    const scenarios = {
+      normal: [
+        { color: 'blue', badge: '正常授权', payload: '0100 (STAN=000123, $100)', title: '1. 发卡行收到 0100 并完成冻结', nodes: ['pos', 'net', 'iss'], detail: '用户刷卡 $100，发卡行校验通过，将 $100 从可用余额转入冻结金额，并准备返回 0110。', avail: '$400', frozen: '$100', db: 'TXN#000123: AUTHORIZED ($100)' },
+        { color: 'red', badge: '网络异常', payload: '0110 响应丢包 / 超时', title: '2. 0110 响应在公网超时丢失', nodes: ['iss', 'net'], detail: '发卡行已扣款，但响应报文在链路中丢失。卡组织/POS 等待超过阈值，判定交易超时。', avail: '$400', frozen: '$100', db: 'TXN#000123: AUTHORIZED ($100)' },
+        { color: 'amber', badge: '触发冲正', payload: '0420 (Orig STAN=000123, $100)', title: '3. 卡组织自动发起 0420 冲正报文', nodes: ['net', 'iss'], detail: '为防止用户被单边扣款，卡组织携带原交易唯一流水号向发卡行发送 0420 冲正。', avail: '$400', frozen: '$100', db: 'TXN#000123: AUTHORIZED ($100)' },
+        { color: 'green', badge: '冲正闭环', payload: '0430 (F39=00)', title: '4. 发卡行匹配原单并释放冻结额度', nodes: ['iss', 'net'], detail: '发卡行根据唯一键命中原交易，释放 $100 冻结金额，状态改为 REVERSED，返回 0430 成功。', avail: '$500', frozen: '$0', db: 'TXN#000123: REVERSED ($0)' }
+      ],
+      outOfOrder: [
+        { color: 'amber', badge: '网络乱序', payload: '0420 先到达 (STAN=000456)', title: '1. 0420 冲正比原 0100 更早到达发卡行', nodes: ['net', 'iss'], detail: '原 0100 在路由节点拥堵延迟；上游超时触发的 0420 率先到达发卡行，此时 DB 查不到原交易。', avail: '$500', frozen: '$0', db: '查询 TXN#000456 → 不存在' },
+        { color: 'blue', badge: '防乱序机制', payload: '写入 PRE_REVERSED 占位记录', title: '2. 发卡行不可丢弃，必须落库“预冲正”', nodes: ['iss'], detail: '发卡行在流水表插入一条 TXN#000456 (PRE_REVERSED) 占位记录，并返回 0430 成功。', avail: '$500', frozen: '$0', db: 'TXN#000456: PRE_REVERSED (占位)' },
+        { color: 'red', badge: '迟到报文', payload: '迟到的 0100 到达 (STAN=000456)', title: '3. 延迟的 0100 授权请求终于到达', nodes: ['net', 'iss'], detail: '1 秒后，原本拥堵的 0100 报文到达发卡行。若未做占位，此时就会错误扣款 $100！', avail: '$500', frozen: '$0', db: '命中唯一键: PRE_REVERSED' },
+        { color: 'green', badge: '成功拦截', payload: '0110 (F39=05 / 拒绝)', title: '4. 命中预冲正标记，直接拦截拒绝扣款', nodes: ['iss', 'net'], detail: '发卡行发现该流水号已处于 PRE_REVERSED 状态，直接拒绝冻结额度，完美避免用户被白扣钱。', avail: '$500', frozen: '$0', db: 'TXN#000456: REVERSED (已拦截)' }
+      ],
+      duplicate: [
+        { color: 'blue', badge: '初始状态', payload: 'TXN#000789 已冻结 $100', title: '1. 原消费交易已成功冻结 $100', nodes: ['iss'], detail: '账户当前可用 $400、冻结 $100，准备接收冲正报文。', avail: '$400', frozen: '$100', db: 'TXN#000789: AUTHORIZED ($100)' },
+        { color: 'green', badge: '首次冲正', payload: '第 1 次 0420 (STAN=000789)', title: '2. 收到第 1 条 0420，正常解冻 $100', nodes: ['net', 'iss'], detail: '发卡行释放 $100 冻结金额，余额恢复 $500，流水状态更新为 REVERSED。假设 0430 再次丢包。', avail: '$500', frozen: '$0', db: 'TXN#000789: REVERSED ($0)' },
+        { color: 'amber', badge: '上游重试', payload: '第 2 次 0420 (完全相同的报文)', title: '3. 卡组织重发第 2 条相同 0420', nodes: ['net', 'iss'], detail: '卡组织按协议重发相同 0420。若未做幂等校验，发卡行会再次 +$100（余额变 $600 资损）！', avail: '$500', frozen: '$0', db: '校验状态：已是 REVERSED' },
+        { color: 'green', badge: '幂等保护', payload: '0430 (F39=00, 不重复动账)', title: '4. 幂等命中：直接返回成功，绝不重复退钱', nodes: ['iss', 'net'], detail: '发卡行识别该交易已冲正，跳过回滚逻辑，直接返回 0430 告知上游停止重试。余额稳稳保持 $500。', avail: '$500', frozen: '$0', db: 'TXN#000789: REVERSED (幂等拦截)' }
+      ]
+    };
+
+    let currentKey = 'normal', stepIdx = 0;
+    function selectScenario(key, btn) {
+      currentKey = key; stepIdx = 0;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    }
+    function render() {
+      const list = scenarios[currentKey], s = list[stepIdx];
+      ['pos', 'net', 'iss'].forEach(id => {
+        document.getElementById('n-' + id).className = 'node' + (s.nodes.includes(id) ? ' hl-' + s.color : '');
+      });
+      document.getElementById('banner').className = 'banner ' + s.color;
+      document.getElementById('badge').textContent = s.badge;
+      document.getElementById('payload').textContent = s.payload;
+      document.getElementById('title').textContent = s.title;
+      document.getElementById('detail').textContent = s.detail;
+      document.getElementById('v-avail').textContent = s.avail;
+      document.getElementById('v-frozen').textContent = s.frozen;
+      document.getElementById('v-db').textContent = s.db;
+
+      const dots = document.getElementById('dots');
+      dots.innerHTML = '';
+      list.forEach((_, i) => {
+        const d = document.createElement('button');
+        d.className = 'dot' + (i === stepIdx ? ' active' : '');
+        d.textContent = i + 1;
+        d.onclick = () => { stepIdx = i; render(); };
+        dots.appendChild(d);
+      });
+      document.getElementById('btnPrev').disabled = stepIdx === 0;
+      document.getElementById('btnNext').disabled = stepIdx === list.length - 1;
+    }
+    document.getElementById('btnPrev').onclick = () => { if (stepIdx > 0) { stepIdx--; render(); } };
+    document.getElementById('btnNext').onclick = () => { if (stepIdx < scenarios[currentKey].length - 1) { stepIdx++; render(); } };
+    render();
+  </script>
+</body>
+</html>
