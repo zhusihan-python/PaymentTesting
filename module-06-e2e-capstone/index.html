@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 6 | 端到端发卡行自动化测试实战项目</title>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --blue: #2563eb; --blue-bg: #eff6ff;
+      --purple: #7c3aed; --purple-bg: #f5f3ff;
+      --green: #059669; --green-bg: #ecfdf5;
+      --amber: #d97706; --amber-bg: #fffbeb;
+      --red: #dc2626; --red-bg: #fef2f2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg); color: var(--text); padding: 24px 16px 60px; line-height: 1.65;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; }
+    .topbar a { text-decoration: none; color: var(--muted); font-weight: 600; }
+    .topbar a:hover { color: var(--text); }
+
+    .section {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 26px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    }
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+    h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    h3 { font-size: 15px; font-weight: 700; margin: 18px 0 10px; }
+    .subtitle { font-size: 14px; color: var(--muted); }
+
+    .map-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 14px; }
+    .map-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 13px; }
+    .map-card strong { display: block; font-size: 13.5px; color: var(--blue); margin-bottom: 4px; }
+
+    /* Pipeline Diagram */
+    .pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; }
+    .stage {
+      background: var(--bg); border: 2px solid var(--border); border-radius: 12px;
+      padding: 12px 8px; text-align: center; transition: all 0.25s; cursor: pointer;
+    }
+    .stage-num { font-size: 11px; font-weight: 800; color: var(--muted); margin-bottom: 4px; }
+    .stage-title { font-size: 13.5px; font-weight: 700; }
+    .stage-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+    .stage.active { border-color: var(--blue); background: var(--blue-bg); transform: translateY(-2px); }
+    .stage.done { border-color: var(--green); background: var(--green-bg); }
+
+    .banner {
+      border-radius: 12px; padding: 16px 20px; margin-bottom: 18px;
+      border-left: 5px solid var(--blue); background: var(--blue-bg);
+    }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .badge { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; color: #fff; background: var(--blue); }
+    .code-tag { font-family: ui-monospace, monospace; font-size: 12px; background: rgba(15,23,42,0.08); padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+    .step-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .step-detail { font-size: 14px; color: #334155; }
+
+    .controls { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
+    .btns { display: flex; gap: 8px; }
+    button.btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+    button.btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .cmd-box {
+      background: #0f172a; color: #e2e8f0; padding: 14px 18px; border-radius: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+      line-height: 1.7; margin-top: 12px; overflow-x: auto;
+    }
+    @media (max-width: 760px) { .pipeline { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="../index.html">← 返回教程总目录</a>
+      <a href="../module-05-digital-wallets/index.html">← 回顾 Module 5</a>
+    </div>
+
+    <!-- Part 1: Overview -->
+    <div class="section">
+      <h1>Module 6：端到端发卡行自动化测试实战项目</h1>
+      <p class="subtitle">将前 5 章的核心知识点整合为一套标准 Pytest 自动化测试套件，覆盖从发卡、交易、异常冲正到合规审计的完整闭环。</p>
+
+      <div class="map-grid">
+        <div class="map-card"><strong>CMS 状态机</strong>开卡、冻结、在途清算放行与强行入账（Force Post）</div>
+        <div class="map-card"><strong>异常与幂等</strong>乱序预冲正占位、重复 0420 幂等保护</div>
+        <div class="map-card"><strong>ISO 8583 协议</strong>余额不足（51）、格式错误（30）响应码断言</div>
+        <div class="map-card"><strong>钱包令牌联动</strong>FPAN 冻结同步挂起所有关联 DPAN</div>
+        <div class="map-card"><strong>PCI-DSS 门禁</strong>全量日志 Luhn + 正则扫描，阻断敏感数据泄露</div>
+      </div>
+    </div>
+
+    <!-- Part 2: Interactive E2E Pipeline -->
+    <div class="section">
+      <h2>交互式分步 DFD：端到端自动化测试闭环</h2>
+      <p class="subtitle">点击下方各阶段或使用按钮，查看 <code>pytest -v</code> 执行时如何逐层验证发卡行核心系统。</p>
+
+      <div class="pipeline" id="pipeline"></div>
+
+      <div class="banner">
+        <div class="meta">
+          <span class="badge" id="badge"></span>
+          <span class="code-tag" id="testFunc"></span>
+        </div>
+        <div class="step-title" id="title"></div>
+        <div class="step-detail" id="detail"></div>
+      </div>
+
+      <div class="controls">
+        <span style="font-size:13px;color:var(--muted);" id="progressText"></span>
+        <div class="btns">
+          <button class="btn" id="btnPrev">上一步</button>
+          <button class="btn primary" id="btnNext">下一步</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Part 3: Local Run Guide -->
+    <div class="section">
+      <h2>本地运行 Pytest 自动化测试套件</h2>
+      <p class="subtitle">在终端进入 <code>module-06-e2e-capstone</code> 目录，执行以下命令即可一键跑通全部 5 个核心端到端用例：</p>
+      <div class="cmd-box">
+# 1. 安装 pytest（如本地尚未安装）<br/>
+pip install pytest<br/><br/>
+# 2. 运行端到端测试套件<br/>
+cd module-06-e2e-capstone<br/>
+pytest -v
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STAGES = [
+      {
+        num: 'STAGE 01', short: '发卡与绑钱包', sub: 'CMS + Token',
+        badge: 'Module 1 & 5', func: 'test_wallet_token_lifecycle_sync',
+        title: '1. 初始化虚拟卡（FPAN）并绑定多设备令牌（DPAN）',
+        detail: '创建初始余额 $100 的虚拟卡，模拟绑定 iPhone 与 Apple Watch。随后冻结主卡，断言主卡与两台设备的 DPAN 全部同步变为 SUSPENDED，且新消费授权被拒绝（F39=62）。'
+      },
+      {
+        num: 'STAGE 02', short: '协议与异常注入', sub: 'ISO 8583 Mock',
+        badge: 'Module 3', func: 'test_iso8583_malformed_and_insufficient_funds',
+        title: '2. 注入超额消费与畸形金额报文',
+        detail: '向发卡行模拟器发送超额 0100 请求（断言返回 F39=51 且不产生冻结）与非法字符金额（断言返回 F39=30 格式错误，系统不崩溃）。'
+      },
+      {
+        num: 'STAGE 03', short: '乱序冲正与幂等', sub: '0420 Reversal',
+        badge: 'Module 2', func: 'test_reversal_out_of_order_and_idempotency',
+        title: '3. 验证“0420 先到”防乱序与“重复 0420”幂等',
+        detail: '先发送 0420 写入 PRE_REVERSED 占位，再发送迟到的 0100 断言被拦截；随后对正常交易连续发送两次相同 0420，断言余额仅恢复一次，绝不重复退钱。'
+      },
+      {
+        num: 'STAGE 04', short: 'T+1 差额清算', sub: 'Force Post',
+        badge: 'Module 1 & 2', func: 'test_auth_and_diff_clearing_force_post',
+        title: '4. 模拟 $100 授权 → $105 T+1 差额强制入账',
+        detail: '联机授权冻结全部 $100（可用 $0），次日收到 $105 清算文件。断言系统执行 Force Post 扣成 -$5 欠款，并将卡片自动置为欠款冻结状态。'
+      },
+      {
+        num: 'STAGE 05', short: 'PCI-DSS 门禁', sub: 'CI/CD Log Scan',
+        badge: 'Module 4', func: 'test_pcidss_log_compliance_gate',
+        title: '5. 扫描全量测试日志，执行合规门禁拦截',
+        detail: '在所有业务用例跑完后，自动提取系统产生的全量审计日志，使用正则 + Luhn 算法扫描，断言明文 PAN 泄露数为 0、CVV/PIN 泄露数为 0。'
+      }
+    ];
+
+    let idx = 0;
+    function render() {
+      const pipe = document.getElementById('pipeline');
+      pipe.innerHTML = '';
+      STAGES.forEach((st, i) => {
+        const div = document.createElement('div');
+        div.className = 'stage' + (i === idx ? ' active' : (i < idx ? ' done' : ''));
+        div.onclick = () => { idx = i; render(); };
+        div.innerHTML = `<div class="stage-num">${st.num}</div><div class="stage-title">${st.short}</div><div class="stage-sub">${st.sub}</div>`;
+        pipe.appendChild(div);
+      });
+
+      const s = STAGES[idx];
+      document.getElementById('badge').textContent = s.badge;
+      document.getElementById('testFunc').textContent = s.func;
+      document.getElementById('title').textContent = s.title;
+      document.getElementById('detail').textContent = s.detail;
+      document.getElementById('progressText').textContent = `当前阶段：${idx + 1} / ${STAGES.length}`;
+      document.getElementById('btnPrev').disabled = idx === 0;
+      document.getElementById('btnNext').disabled = idx === STAGES.length - 1;
+    }
+
+    document.getElementById('btnPrev').onclick = () => { if (idx > 0) { idx--; render(); } };
+    document.getElementById('btnNext').onclick = () => { if (idx < STAGES.length - 1) { idx++; render(); } };
+    render();
+  </script>
+</body>
+</html>
