@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 1 | 动手微练习：稳定币虚拟卡需求评审</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --primary-bg: #eff6ff;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --success: #059669;
+      --success-bg: #ecfdf5;
+      --warn: #d97706;
+      --warn-bg: #fffbeb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 16px 60px;
+      line-height: 1.6;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; }
+
+    .header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    }
+    .header h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .header p { font-size: 14px; color: var(--muted); }
+
+    .q-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    }
+
+    .q-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-bg);
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    .pm-quote {
+      background: #f1f5f9;
+      border-left: 4px solid #64748b;
+      padding: 14px 16px;
+      border-radius: 0 8px 8px 0;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .note-input {
+      width: 100%;
+      min-height: 70px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      margin-bottom: 14px;
+      background: #fafafa;
+    }
+    .note-input:focus { outline: none; border-color: var(--primary); background: #fff; }
+
+    .btn-reveal {
+      padding: 9px 18px;
+      border-radius: 8px;
+      border: none;
+      background: var(--text);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-reveal:hover { opacity: 0.88; }
+
+    .answer-box {
+      display: none;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--border);
+      animation: fadeIn 0.25s ease;
+    }
+    .answer-box.open { display: block; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .ans-section { margin-bottom: 14px; font-size: 14px; }
+    .ans-section strong { color: var(--text); }
+    .tag-bug { color: var(--danger); font-weight: 700; }
+    .tag-fix { color: var(--success); font-weight: 700; }
+
+    /* Interactive Sandbox */
+    .sandbox {
+      margin-top: 16px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .sandbox-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sandbox-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+
+    .mode-switch { display: flex; gap: 6px; }
+    .mode-btn {
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+    }
+    .mode-btn.active-bug { background: var(--danger-bg); color: var(--danger); border-color: #fca5a5; }
+    .mode-btn.active-fix { background: var(--success-bg); color: var(--success); border-color: #6ee7b7; }
+
+    .action-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .sim-btn {
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sim-btn:hover:not(:disabled) { background: #e2e8f0; }
+    .sim-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .sim-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .sim-output {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+    .sim-output.danger { background: var(--danger-bg); border-color: #fca5a5; color: #991b1b; }
+    .sim-output.success { background: var(--success-bg); border-color: #6ee7b7; color: #065f46; }
+    .sim-output.warn { background: var(--warn-bg); border-color: #fcd34d; color: #92400e; }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .mini-stat {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .mini-stat-label { font-size: 11px; color: var(--muted); }
+    .mini-stat-val { font-size: 18px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .val-danger { color: var(--danger); }
+    .val-success { color: var(--success); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Module 1 动手微练习：稳定币 Visa 虚拟卡需求评审</h1>
+      <p>作为高级测试工程师，请在下方先写下你的分析，再点击 <strong>Reveal Answer</strong> 查看参考答案与交互式资损模拟。</p>
+    </div>
+
+    <!-- Question 1 -->
+    <div class="q-card">
+      <span class="q-badge">场景 1 · 卡状态机拦截边界</span>
+      <div class="pm-quote">需求描述：用户冻结卡片（Frozen）后，系统拦截该卡的一切交易。</div>
+      <textarea class="note-input" placeholder="先写下你的思考：拦截“一切交易”会引发什么问题？哪些交易应该拦截，哪些必须放行？"></textarea>
+      <button class="btn-reveal" onclick="toggleAnswer('ans1', this)">Reveal Answer</button>
+
+      <div class="answer-box" id="ans1">
+        <div class="ans-section">
+          <span class="tag-bug">隐藏漏洞：</span>“一刀切拦截所有交易”会导致<strong>历史已授权交易的 T+1 清算入账失败</strong>（发卡行被迫垫资资损），以及<strong>商户退款（Refund）被拒</strong>（用户资金退不回来引发客诉）。
+        </div>
+        <div class="ans-section">
+          <span class="tag-fix">正确测试预期：</span>卡片处于 <code>Frozen</code> 状态时，仅拦截<strong>新的联机消费授权（0100）</strong>和绑卡请求；对于<strong>在途交易的清算入账（Clearing）</strong>、<strong>冲正（Reversal）</strong>及<strong>商户退款（Refund）</strong>必须放行入账。
+        </div>
+
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">交互式验证：当前卡状态 = Frozen（已冻结）</span>
+            <div class="mode-switch">
+              <button class="mode-btn active-bug" id="q1-bug" onclick="setQ1Mode('bug')">错误逻辑（一刀切拦截）</button>
+              <button class="mode-btn" id="q1-fix" onclick="setQ1Mode('fix')">正确逻辑（按类型放行）</button>
+            </div>
+          </div>
+          <div class="action-row">
+            <button class="sim-btn" onclick="simQ1('auth')">模拟：发起新消费授权 ($50)</button>
+            <button class="sim-btn" onclick="simQ1('clear')">模拟：昨日消费 T+1 清算 ($100)</button>
+            <button class="sim-btn" onclick="simQ1('refund')">模拟：商户发起退款 ($30)</button>
+          </div>
+          <div class="sim-output" id="q1-out">请点击上方按钮，向已冻结的卡片发送不同类型的交易报文。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Question 2 -->
+    <div class="q-card">
+      <span class="q-badge">场景 2 · T+1 差额清算与透支处理</span>
+      <div class="pm-quote">需求描述：用户余额 100 USDT，刷卡消费 $100（联机授权冻结 100 USDT），次日（T+1）商户因汇率波动或小费追加，发来 $105 的清算文件。</div>
+      <textarea class="note-input" placeholder="先写下你的思考：用户可用余额已经是 0 了，多出来的 $5 怎么扣？能直接拒绝清算文件吗？"></textarea>
+      <button class="btn-reveal" onclick="toggleAnswer('ans2', this)">Reveal Answer</button>
+
+      <div class="answer-box" id="ans2">
+        <div class="ans-section">
+          <span class="tag-bug">隐藏漏洞：</span>发卡行<strong>不能拒绝卡组织发来的合规清算文件</strong>（资金已在卡组织层面划走）。如果代码里写了“余额不足则抛异常/拒绝扣款”，会导致批处理中断或长短款对账失败。
+        </div>
+        <div class="ans-section">
+          <span class="tag-fix">正确测试预期：</span>系统必须支持<strong>强制入账（Force Post）</strong>——释放原 100 USDT 冻结金额，并允许账户余额扣成<strong>负数（-5 USDT 欠款/透支）</strong>；同时自动触发风控动作（如临时冻结卡片、发送催缴通知，下次充值时自动优先抵扣欠款）。
+        </div>
+
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">交互式验证：T+1 $105 清算入账模拟</span>
+            <div class="mode-switch">
+              <button class="mode-btn active-bug" id="q2-bug" onclick="setQ2Mode('bug')">错误逻辑（校验余额不足报错）</button>
+              <button class="mode-btn" id="q2-fix" onclick="setQ2Mode('fix')">正确逻辑（强制入账 + 欠款风控）</button>
+            </div>
+          </div>
+          <div class="mini-grid">
+            <div class="mini-stat"><div class="mini-stat-label">可用余额</div><div class="mini-stat-val" id="q2-avail">0 USDT</div></div>
+            <div class="mini-stat"><div class="mini-stat-label">冻结金额</div><div class="mini-stat-val" id="q2-frozen">100 USDT</div></div>
+            <div class="mini-stat"><div class="mini-stat-label">卡片状态</div><div class="mini-stat-val" id="q2-status">Active</div></div>
+          </div>
+          <div class="action-row">
+            <button class="sim-btn primary" onclick="simQ2Run()">执行 T+1 清算文件（实扣 $105）</button>
+            <button class="sim-btn" onclick="simQ2Reset()">重置状态</button>
+          </div>
+          <div class="sim-output" id="q2-out">初始状态：用户原余额 100 USDT 已全额冻结，准备接收次日 $105 清算文件。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Question 3 -->
+    <div class="q-card">
+      <span class="q-badge">场景 3 · 销卡与在途资金资损</span>
+      <div class="pm-quote">需求描述：用户在销卡（Closed）时，系统直接把卡片状态改为 Closed，允许用户把剩余 USDT 全部提现。</div>
+      <textarea class="note-input" placeholder="先写下你的思考：如果用户刚刷完卡还没清算，立刻销卡并提现全部余额，会发生什么？"></textarea>
+      <button class="btn-reveal" onclick="toggleAnswer('ans3', this)">Reveal Answer</button>
+
+      <div class="answer-box" id="ans3">
+        <div class="ans-section">
+          <span class="tag-bug">隐藏漏洞：</span>典型<strong>恶意套现/资损漏洞</strong>。如果存在“已授权但未清算（Pending）”的在途交易，允许用户全额提现后，次日卡组织清算文件到达时账户已空，发卡行将直接承担全部资金损失。
+        </div>
+        <div class="ans-section">
+          <span class="tag-fix">正确测试预期：</span>销卡前必须校验<strong>是否存在在途冻结交易（Frozen &gt; 0）或未结清欠款</strong>。正确策略二选一：① 存在在途交易时拒绝销卡，提示等待清算完成；② 允许进入“待销卡（Pending Close）”状态，<strong>仅允许提现“可用余额”</strong>，冻结资金继续锁定直至清算完成或授权过期释放。
+        </div>
+
+        <div class="sandbox">
+          <div class="sandbox-header">
+            <span class="sandbox-title">交互式验证：总资金 $200（可用 $100 + 在途冻结 $100）</span>
+            <div class="mode-switch">
+              <button class="mode-btn active-bug" id="q3-bug" onclick="setQ3Mode('bug')">错误逻辑（允许全额提现 $200）</button>
+              <button class="mode-btn" id="q3-fix" onclick="setQ3Mode('fix')">正确逻辑（锁定在途 $100）</button>
+            </div>
+          </div>
+          <div class="mini-grid">
+            <div class="mini-stat"><div class="mini-stat-label">用户已提现</div><div class="mini-stat-val" id="q3-withdrawn">$0</div></div>
+            <div class="mini-stat"><div class="mini-stat-label">系统留存冻结池</div><div class="mini-stat-val" id="q3-pool">$100</div></div>
+            <div class="mini-stat"><div class="mini-stat-label">发卡行资损 (P&L)</div><div class="mini-stat-val" id="q3-loss">$0</div></div>
+          </div>
+          <div class="action-row">
+            <button class="sim-btn primary" id="q3-step1" onclick="simQ3Step1()">步骤 1：用户申请销卡并提现</button>
+            <button class="sim-btn primary" id="q3-step2" onclick="simQ3Step2()" disabled>步骤 2：T+1 $100 清算文件到达</button>
+            <button class="sim-btn" onclick="simQ3Reset()">重置</button>
+          </div>
+          <div class="sim-output" id="q3-out">请依次点击步骤 1 和步骤 2，观察不同逻辑下的发卡行资损结果。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleAnswer(id, btn) {
+      const box = document.getElementById(id);
+      const isOpen = box.classList.toggle('open');
+      btn.textContent = isOpen ? 'Hide Answer' : 'Reveal Answer';
+    }
+
+    // --- Q1 Sandbox ---
+    let q1Mode = 'bug';
+    function setQ1Mode(mode) {
+      q1Mode = mode;
+      document.getElementById('q1-bug').className = 'mode-btn' + (mode === 'bug' ? ' active-bug' : '');
+      document.getElementById('q1-fix').className = 'mode-btn' + (mode === 'fix' ? ' active-fix' : '');
+      const out = document.getElementById('q1-out');
+      out.className = 'sim-output';
+      out.textContent = '已切换模式，请点击上方按钮测试交易报文。';
+    }
+    function simQ1(type) {
+      const out = document.getElementById('q1-out');
+      if (type === 'auth') {
+        out.className = 'sim-output success';
+        out.innerHTML = '<strong>[拦截成功 · F39=62]</strong> 新消费授权被拒绝，符合预期：冻结中的卡片不允许产生新消费。';
+      } else if (type === 'clear') {
+        if (q1Mode === 'bug') {
+          out.className = 'sim-output danger';
+          out.innerHTML = '<strong>[严重资损 Bug]</strong> 昨日已授权的 $100 清算被错误拦截！卡组织已划走发卡行备付金，但用户账务未扣款，产生 $100 短款资损。';
+        } else {
+          out.className = 'sim-output success';
+          out.innerHTML = '<strong>[放行入账成功]</strong> 识别为历史授权的 T+1 清算，绕过 Frozen 拦截，正常释放冻结并核销扣款 $100。';
+        }
+      } else if (type === 'refund') {
+        if (q1Mode === 'bug') {
+          out.className = 'sim-output danger';
+          out.innerHTML = '<strong>[业务 Bug]</strong> 商户 $30 退款被错误拒绝！资金挂账在过渡户，导致用户无法收到退款并引发客诉。';
+        } else {
+          out.className = 'sim-output success';
+          out.innerHTML = '<strong>[放行入账成功]</strong> 退款属于贷记入账（Credit），绕过 Frozen 拦截，用户可用余额正常 +$30。';
+        }
+      }
+    }
+
+    // --- Q2 Sandbox ---
+    let q2Mode = 'bug';
+    function setQ2Mode(mode) {
+      q2Mode = mode;
+      document.getElementById('q2-bug').className = 'mode-btn' + (mode === 'bug' ? ' active-bug' : '');
+      document.getElementById('q2-fix').className = 'mode-btn' + (mode === 'fix' ? ' active-fix' : '');
+      simQ2Reset();
+    }
+    function simQ2Reset() {
+      document.getElementById('q2-avail').textContent = '0 USDT';
+      document.getElementById('q2-avail').className = 'mini-stat-val';
+      document.getElementById('q2-frozen').textContent = '100 USDT';
+      document.getElementById('q2-status').textContent = 'Active';
+      document.getElementById('q2-status').className = 'mini-stat-val';
+      const out = document.getElementById('q2-out');
+      out.className = 'sim-output';
+      out.textContent = '初始状态：用户原余额 100 USDT 已全额冻结，准备接收次日 $105 清算文件。';
+    }
+    function simQ2Run() {
+      const out = document.getElementById('q2-out');
+      if (q2Mode === 'bug') {
+        out.className = 'sim-output danger';
+        out.innerHTML = '<strong>[批处理崩溃 / 对账失败]</strong> 系统抛出 <code>InsufficientBalanceException</code> 拒绝扣款！清算任务卡死，且发卡行与卡组织出现 $105 账务不平。';
+      } else {
+        document.getElementById('q2-avail').textContent = '-5 USDT';
+        document.getElementById('q2-avail').className = 'mini-stat-val val-danger';
+        document.getElementById('q2-frozen').textContent = '0 USDT';
+        document.getElementById('q2-status').textContent = 'Frozen (欠款冻结)';
+        document.getElementById('q2-status').className = 'mini-stat-val val-danger';
+        out.className = 'sim-output success';
+        out.innerHTML = '<strong>[强制入账成功]</strong> 释放 100 USDT 冻结，补扣 5 USDT 形成 <strong>-5 USDT 欠款</strong>；系统自动将卡片置为欠款冻结并触发催缴，对账完全平账。';
+      }
+    }
+
+    // --- Q3 Sandbox ---
+    let q3Mode = 'bug';
+    function setQ3Mode(mode) {
+      q3Mode = mode;
+      document.getElementById('q3-bug').className = 'mode-btn' + (mode === 'bug' ? ' active-bug' : '');
+      document.getElementById('q3-fix').className = 'mode-btn' + (mode === 'fix' ? ' active-fix' : '');
+      simQ3Reset();
+    }
+    function simQ3Reset() {
+      document.getElementById('q3-withdrawn').textContent = '$0';
+      document.getElementById('q3-pool').textContent = '$100';
+      document.getElementById('q3-loss').textContent = '$0';
+      document.getElementById('q3-loss').className = 'mini-stat-val';
+      document.getElementById('q3-step1').disabled = false;
+      document.getElementById('q3-step2').disabled = true;
+      const out = document.getElementById('q3-out');
+      out.className = 'sim-output';
+      out.textContent = '请依次点击步骤 1 和步骤 2，观察不同逻辑下的发卡行资损结果。';
+    }
+    function simQ3Step1() {
+      document.getElementById('q3-step1').disabled = true;
+      document.getElementById('q3-step2').disabled = false;
+      const out = document.getElementById('q3-out');
+      if (q3Mode === 'bug') {
+        document.getElementById('q3-withdrawn').textContent = '$200';
+        document.getElementById('q3-pool').textContent = '$0';
+        out.className = 'sim-output warn';
+        out.innerHTML = '<strong>[隐患已埋下]</strong> 卡片直接置为 Closed，用户成功提走全部 $200（包含尚未清算的 $100 冻结资金）。请点击步骤 2。';
+      } else {
+        document.getElementById('q3-withdrawn').textContent = '$100';
+        document.getElementById('q3-pool').textContent = '$100 (锁定中)';
+        out.className = 'sim-output success';
+        out.innerHTML = '<strong>[风控拦截生效]</strong> 卡片进入 Pending Close，仅允许用户提现可用余额 $100；在途冻结的 $100 继续锁定在系统资金池中。请点击步骤 2。';
+      }
+    }
+    function simQ3Step2() {
+      document.getElementById('q3-step2').disabled = true;
+      const out = document.getElementById('q3-out');
+      if (q3Mode === 'bug') {
+        document.getElementById('q3-loss').textContent = '-$100 (资损)';
+        document.getElementById('q3-loss').className = 'mini-stat-val val-danger';
+        out.className = 'sim-output danger';
+        out.innerHTML = '<strong>[发生真实资损]</strong> T+1 $100 清算文件到达，但用户早已销卡提现跑路，发卡行净亏损 $100！';
+      } else {
+        document.getElementById('q3-pool').textContent = '$0 (已核销)';
+        document.getElementById('q3-loss').textContent = '$0 (无资损)';
+        document.getElementById('q3-loss').className = 'mini-stat-val val-success';
+        out.className = 'sim-output success';
+        out.innerHTML = '<strong>[安全闭环]</strong> T+1 $100 清算文件到达，直接从锁定的 $100 资金池扣款核销，卡片随后自动转为最终 Closed 状态，零资损！';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 1 | 交互式分步 DFD：授权与清算双链路</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --auth: #2563eb;
+      --auth-bg: #eff6ff;
+      --clear: #7c3aed;
+      --clear-bg: #f5f3ff;
+      --success: #059669;
+      --warn: #d97706;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 16px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+    }
+
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .header h1 { font-size: 20px; font-weight: 700; }
+    .header p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* Toggle Switch */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #92400e;
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle-wrap input { accent-color: var(--warn); width: 16px; height: 16px; cursor: pointer; }
+
+    /* Diagram Nodes */
+    .diagram {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .node {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 12px;
+      text-align: center;
+      transition: all 0.25s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .node-title { font-weight: 700; font-size: 15px; }
+    .node-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .node.active-auth {
+      border-color: var(--auth);
+      background: var(--auth-bg);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+      transform: translateY(-2px);
+    }
+    .node.active-clear {
+      border-color: var(--clear);
+      background: var(--clear-bg);
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+      transform: translateY(-2px);
+    }
+
+    /* Flow Banner */
+    .flow-banner {
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      border-left: 5px solid var(--auth);
+      background: var(--auth-bg);
+      transition: all 0.25s ease;
+    }
+    .flow-banner.phase-clear {
+      border-left-color: var(--clear);
+      background: var(--clear-bg);
+    }
+    .flow-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--auth);
+    }
+    .phase-clear .badge { background: var(--clear); }
+    .payload-tag {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      background: rgba(15, 23, 42, 0.08);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .flow-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .flow-detail { font-size: 14px; color: #334155; }
+    .flow-route {
+      margin-top: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    /* Ledger Panel */
+    .ledger-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    .ledger {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .ledger-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: #fff;
+      transition: all 0.3s ease;
+    }
+    .ledger-card.changed {
+      border-color: var(--success);
+      background: #ecfdf5;
+    }
+    .ledger-label { font-size: 12px; color: var(--muted); }
+    .ledger-value {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .step-dots { display: flex; gap: 8px; }
+    .dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dot.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+    .btn-group { display: flex; gap: 10px; }
+    button.btn {
+      padding: 9px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    button.btn:hover:not(:disabled) { background: #f1f5f9; }
+    button.btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    button.btn.primary:hover:not(:disabled) { opacity: 0.9; }
+    button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    @media (max-width: 700px) {
+      .diagram { grid-template-columns: repeat(2, 1fr); }
+      .ledger { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>交互式分步 DFD：授权与清算双链路</h1>
+        <p>初始账户余额：$500 ｜ 观察实时联机授权与 T+1 批处理清算的资金流转</p>
+      </div>
+      <label class="toggle-wrap">
+        <input type="checkbox" id="diffToggle" />
+        模拟 T+1 差额清算（$100 授权 → $105 实扣）
+      </label>
+    </div>
+
+    <div class="diagram">
+      <div class="node" id="node-merchant">
+        <div class="node-title">商户 / POS</div>
+        <div class="node-sub">发起消费与日终批结</div>
+      </div>
+      <div class="node" id="node-acquirer">
+        <div class="node-title">收单行</div>
+        <div class="node-sub">转发授权与汇总清算</div>
+      </div>
+      <div class="node" id="node-network">
+        <div class="node-title">卡组织 Visa/MC</div>
+        <div class="node-sub">联机路由与清分中心</div>
+      </div>
+      <div class="node" id="node-issuer">
+        <div class="node-title">发卡行 CMS/账务</div>
+        <div class="node-sub">校验状态、冻结与核销</div>
+      </div>
+    </div>
+
+    <div class="flow-banner" id="flowBanner">
+      <div class="flow-meta">
+        <span class="badge" id="phaseBadge"></span>
+        <span class="payload-tag" id="payloadTag"></span>
+      </div>
+      <div class="flow-title" id="stepTitle"></div>
+      <div class="flow-detail" id="stepDetail"></div>
+      <div class="flow-route" id="stepRoute"></div>
+    </div>
+
+    <div class="ledger-title">发卡行实时账务状态（Ledger）</div>
+    <div class="ledger">
+      <div class="ledger-card" id="card-avail">
+        <div class="ledger-label">可用余额 (Available)</div>
+        <div class="ledger-value" id="val-avail">$500</div>
+      </div>
+      <div class="ledger-card" id="card-frozen">
+        <div class="ledger-label">冻结金额 (Frozen / Pending)</div>
+        <div class="ledger-value" id="val-frozen">$0</div>
+      </div>
+      <div class="ledger-card" id="card-cleared">
+        <div class="ledger-label">已清算扣款 (Cleared)</div>
+        <div class="ledger-value" id="val-cleared">$0</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="step-dots" id="stepDots"></div>
+      <div class="btn-group">
+        <button class="btn" id="btnReset">重置</button>
+        <button class="btn" id="btnPrev">上一步</button>
+        <button class="btn primary" id="btnNext">下一步</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const steps = [
+      {
+        phase: 'auth',
+        phaseLabel: '阶段一：实时联机授权',
+        payload: 'ISO 8583 0100 ($100)',
+        title: '1. 发起联机授权请求',
+        route: '流向：商户 / POS → 收单行 → 卡组织 → 发卡行',
+        nodes: ['merchant', 'acquirer', 'network', 'issuer'],
+        detailNormal: '用户刷卡消费 $100，收单行经卡组织向发卡行实时发送 0100 授权请求报文。',
+        detailDiff: '用户刷卡消费 $100，收单行经卡组织向发卡行实时发送 0100 授权请求报文。',
+        ledgerNormal: { avail: 500, frozen: 0, cleared: 0 },
+        ledgerDiff: { avail: 500, frozen: 0, cleared: 0 }
+      },
+      {
+        phase: 'auth',
+        phaseLabel: '阶段一：实时联机授权',
+        payload: 'ISO 8583 0110 (F39=00)',
+        title: '2. 校验卡状态并冻结额度',
+        route: '流向：发卡行 → 卡组织 → 收单行 → 商户 / POS',
+        nodes: ['issuer', 'network', 'merchant'],
+        detailNormal: '发卡行确认卡状态为 Active 且余额充足，冻结 $100 并返回授权通过（F39=00）。此时资金尚未真实划拨。',
+        detailDiff: '发卡行确认卡状态为 Active 且余额充足，冻结 $100 并返回授权通过（F39=00）。此时资金尚未真实划拨。',
+        ledgerNormal: { avail: 400, frozen: 100, cleared: 0 },
+        ledgerDiff: { avail: 400, frozen: 100, cleared: 0 }
+      },
+      {
+        phase: 'clear',
+        phaseLabel: '阶段二：T+1 批处理清算',
+        payload: '日终批次请款文件',
+        title: '3. 商户日终批结请款',
+        route: '流向：商户 / POS → 收单行',
+        nodes: ['merchant', 'acquirer'],
+        detailNormal: '次日凌晨，商户将当日所有已授权交易打包发送给收单行请款（请款金额 $100）。',
+        detailDiff: '次日凌晨，商户批结请款。因餐厅追加 $5 小费（或外币汇率波动），最终请款总额变为 $105。',
+        ledgerNormal: { avail: 400, frozen: 100, cleared: 0 },
+        ledgerDiff: { avail: 400, frozen: 100, cleared: 0 }
+      },
+      {
+        phase: 'clear',
+        phaseLabel: '阶段二：T+1 批处理清算',
+        payload: 'Visa BASE II / MC IPM 文件',
+        title: '4. 卡组织清分并下发清算文件',
+        route: '流向：收单行 → 卡组织 → 发卡行',
+        nodes: ['acquirer', 'network', 'issuer'],
+        detailNormal: '卡组织汇总全球收单行数据，按发卡行拆分后下发标准批处理清算文件。',
+        detailDiff: '卡组织汇总全球收单行数据，按发卡行拆分后下发包含 $105 实扣金额的标准清算文件。',
+        ledgerNormal: { avail: 400, frozen: 100, cleared: 0 },
+        ledgerDiff: { avail: 400, frozen: 100, cleared: 0 }
+      },
+      {
+        phase: 'clear',
+        phaseLabel: '阶段二：T+1 批处理清算',
+        payload: '发卡行账务批处理核销',
+        title: '5. 发卡行解冻并实扣核销',
+        route: '流向：发卡行内部账务系统',
+        nodes: ['issuer'],
+        detailNormal: '发卡行匹配原授权记录，释放 $100 冻结金额并完成真实扣款，交易闭环。',
+        detailDiff: '发卡行释放原 $100 冻结金额，并额外从可用余额补扣 $5 差额（若余额不足则产生透支/欠款），总计实扣 $105。',
+        ledgerNormal: { avail: 400, frozen: 0, cleared: 100 },
+        ledgerDiff: { avail: 395, frozen: 0, cleared: 105 }
+      }
+    ];
+
+    let currentStep = 0;
+    let prevLedger = { avail: 500, frozen: 0, cleared: 0 };
+
+    const diffToggle = document.getElementById('diffToggle');
+    const stepDots = document.getElementById('stepDots');
+
+    function renderDots() {
+      stepDots.innerHTML = '';
+      steps.forEach((_, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'dot' + (idx === currentStep ? ' active' : '');
+        btn.textContent = idx + 1;
+        btn.onclick = () => { currentStep = idx; render(); };
+        stepDots.appendChild(btn);
+      });
+    }
+
+    function render() {
+      const s = steps[currentStep];
+      const isDiff = diffToggle.checked;
+      const ledger = isDiff ? s.ledgerDiff : s.ledgerNormal;
+
+      // Update nodes
+      ['merchant', 'acquirer', 'network', 'issuer'].forEach(id => {
+        const el = document.getElementById('node-' + id);
+        el.className = 'node';
+        if (s.nodes.includes(id)) {
+          el.classList.add(s.phase === 'auth' ? 'active-auth' : 'active-clear');
+        }
+      });
+
+      // Update banner
+      const banner = document.getElementById('flowBanner');
+      banner.className = 'flow-banner' + (s.phase === 'clear' ? ' phase-clear' : '');
+      document.getElementById('phaseBadge').textContent = s.phaseLabel;
+      document.getElementById('payloadTag').textContent = s.payload;
+      document.getElementById('stepTitle').textContent = s.title;
+      document.getElementById('stepDetail').textContent = isDiff ? s.detailDiff : s.detailNormal;
+      document.getElementById('stepRoute').textContent = s.route;
+
+      // Update ledger with change highlight
+      ['avail', 'frozen', 'cleared'].forEach(key => {
+        const valEl = document.getElementById('val-' + key);
+        const cardEl = document.getElementById('card-' + key);
+        valEl.textContent = '$' + ledger[key];
+        cardEl.classList.toggle('changed', ledger[key] !== prevLedger[key]);
+      });
+      prevLedger = { ...ledger };
+
+      // Update buttons
+      document.getElementById('btnPrev').disabled = currentStep === 0;
+      document.getElementById('btnNext').disabled = currentStep === steps.length - 1;
+      renderDots();
+    }
+
+    document.getElementById('btnPrev').onclick = () => { if (currentStep > 0) { currentStep--; render(); } };
+    document.getElementById('btnNext').onclick = () => { if (currentStep < steps.length - 1) { currentStep++; render(); } };
+    document.getElementById('btnReset').onclick = () => { currentStep = 0; prevLedger = { avail: 500, frozen: 0, cleared: 0 }; render(); };
+    diffToggle.onchange = render;
+
+    render();
+  </script>
+</body>
+</html>
