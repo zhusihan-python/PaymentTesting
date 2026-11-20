@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 3 | ISO 8583 协议与 Mock 挡板实战</title>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --blue: #2563eb; --blue-bg: #eff6ff;
+      --purple: #7c3aed; --purple-bg: #f5f3ff;
+      --green: #059669; --green-bg: #ecfdf5;
+      --amber: #d97706; --amber-bg: #fffbeb;
+      --red: #dc2626; --red-bg: #fef2f2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg); color: var(--text); padding: 24px 16px 60px; line-height: 1.65;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; }
+    .topbar a { text-decoration: none; color: var(--muted); font-weight: 600; }
+    .topbar a:hover { color: var(--text); }
+
+    .section {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 26px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    }
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+    h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    h3 { font-size: 15px; font-weight: 700; margin: 18px 0 10px; }
+    .subtitle { font-size: 14px; color: var(--muted); }
+
+    /* Structure Diagram */
+    .pkt-bar {
+      display: grid; grid-template-columns: 1fr 2fr 3fr; gap: 10px; margin: 14px 0;
+    }
+    .pkt-part {
+      border-radius: 10px; padding: 12px 14px; border: 1px solid var(--border);
+    }
+    .pkt-part.mti { background: var(--blue-bg); border-color: #bfdbfe; }
+    .pkt-part.bmp { background: var(--purple-bg); border-color: #ddd6fe; }
+    .pkt-part.de { background: var(--green-bg); border-color: #a7f3d0; }
+    .pkt-part strong { display: block; font-size: 14px; margin-bottom: 4px; }
+    .pkt-part span { font-size: 12.5px; color: #334155; }
+
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 13.5px; }
+    th, td { border: 1px solid var(--border); padding: 9px 12px; text-align: left; }
+    th { background: #f1f5f9; font-weight: 700; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: #f1f5f9; padding: 2px 5px; border-radius: 4px; }
+
+    /* Interactive Assembler */
+    .controls-row {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 16px 0;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+    select.mti-select {
+      padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border);
+      font-size: 13.5px; font-weight: 700; background: #fff; cursor: pointer;
+    }
+    .preset-btn {
+      padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border);
+      background: #fff; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    }
+    .preset-btn:hover { background: #f1f5f9; }
+
+    .field-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 10px; margin-bottom: 20px;
+    }
+    .field-card {
+      border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px;
+      cursor: pointer; transition: all 0.15s; background: #fff; user-select: none;
+    }
+    .field-card.selected { border-color: var(--purple); background: var(--purple-bg); }
+    .field-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .field-num { font-size: 12px; font-weight: 800; color: var(--purple); }
+    .field-name { font-size: 13px; font-weight: 700; }
+    .field-val { font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--muted); margin-top: 3px; word-break: break-all; }
+
+    /* Output Console */
+    .console {
+      background: #0f172a; color: #e2e8f0; border-radius: 12px; padding: 16px 18px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+    }
+    .console-row { margin-bottom: 12px; }
+    .console-row:last-child { margin-bottom: 0; }
+    .console-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .bin-grid { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; }
+    .nibble { background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #cbd5e1; }
+    .nibble.has-one { color: #c084fc; font-weight: 700; }
+
+    .raw-msg { word-break: break-all; line-height: 1.8; font-size: 13.5px; }
+    .seg-mti { background: rgba(37, 99, 235, 0.35); color: #93c5fd; padding: 2px 5px; border-radius: 4px; }
+    .seg-bmp { background: rgba(124, 58, 237, 0.35); color: #d8b4fe; padding: 2px 5px; border-radius: 4px; }
+    .seg-de { background: rgba(5, 150, 105, 0.35); color: #6ee7b7; padding: 2px 5px; border-radius: 4px; margin-left: 2px; }
+
+    /* Mock Fault Injector */
+    .mock-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .mock-btn {
+      padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .mock-btn:hover { background: #f1f5f9; }
+    .mock-out {
+      padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg); font-size: 13.5px;
+    }
+    .mock-out.ok { background: var(--green-bg); border-color: #6ee7b7; color: #065f46; }
+    .mock-out.warn { background: var(--amber-bg); border-color: #fcd34d; color: #92400e; }
+    .mock-out.err { background: var(--red-bg); border-color: #fca5a5; color: #991b1b; }
+
+    .cmd-box {
+      background: #0f172a; color: #e2e8f0; padding: 12px 16px; border-radius: 8px;
+      font-family: ui-monospace, monospace; font-size: 13px; margin-top: 12px;
+    }
+    @media (max-width: 700px) { .pkt-bar { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="../index.html">← 返回教程总目录</a>
+      <a href="../module-02-reconciliation/index.html">← 回顾 Module 2</a>
+    </div>
+
+    <!-- Part 1: Mental Models -->
+    <div class="section">
+      <h1>Module 3：ISO 8583 协议与 Mock 挡板实战</h1>
+      <p class="subtitle">ISO 8583 不是 JSON，而是一种极度紧凑的定长/变长报文。掌握 MTI + Bitmap + 数据元，就能看懂任意银行卡报文。</p>
+
+      <h3>1. 一笔 ISO 8583 报文的三段式结构</h3>
+      <div class="pkt-bar">
+        <div class="pkt-part mti"><strong>1. MTI（4 位数字）</strong><span>定义报文类型：如 <code>0100</code> 授权请求、<code>0110</code> 授权响应、<code>0420</code> 冲正。</span></div>
+        <div class="pkt-part bmp"><strong>2. Bitmap（64 位 / 16 字节 Hex）</strong><span>二进制开关阵列：第 N 位为 <code>1</code> 表示携带了 Field N；为 <code>0</code> 则省略。</span></div>
+        <div class="pkt-part de"><strong>3. Data Elements（数据元）</strong><span>按位图开启的顺序依次拼接实际业务值（如卡号、金额、响应码）。</span></div>
+      </div>
+
+      <h3>2. 发卡行测试最高频的 6 个核心数据元</h3>
+      <table>
+        <thead><tr><th>域编号</th><th>名称</th><th>格式/示例</th><th>测试核心关注点</th></tr></thead>
+        <tbody>
+          <tr><td><code>F2</code></td><td>主账号 (PAN)</td><td>LLVAR（前2位表长度）如 <code>164111...1111</code></td><td>BIN 路由、Luhn 校验、日志脱敏</td></tr>
+          <tr><td><code>F4</code></td><td>交易金额</td><td>12 位定长（单位：分）<code>000000010000</code> = $100</td><td><strong>精度与小数位</strong>（日元无小数、科威特第纳尔3位小数）</td></tr>
+          <tr><td><code>F11</code></td><td>系统跟踪号 (STAN)</td><td>6 位定长 <code>000123</code></td><td>冲正匹配、幂等防重的联合唯一键</td></tr>
+          <tr><td><code>F39</code></td><td>响应码 (Response Code)</td><td>2 位字符 <code>00</code> / <code>51</code> / <code>05</code></td><td><code>00</code> 成功、<code>51</code> 余额不足、<code>55</code> 密码错、<code>91</code> 系统不可用</td></tr>
+          <tr><td><code>F49</code></td><td>交易币种</td><td>3 位 ISO 4217 <code>840</code>(USD) / <code>344</code>(HKD)</td><td>跨境多币种汇率转换与账务折算</td></tr>
+          <tr><td><code>F55</code></td><td>EMV 芯片数据</td><td>LLLVAR（TLV 编码）</td><td>透传 ARQC/ARPC 密文给 HSM 验签</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Part 2: Interactive Bitmap & Assembler -->
+    <div class="section">
+      <h2>交互式工具：ISO 8583 位图（Bitmap）计算与报文组装器</h2>
+      <p class="subtitle">勾选下方数据元，实时观察 64 位二进制位图、16 位 Hex 编码以及最终拼接的原始报文。</p>
+
+      <div class="controls-row">
+        <label style="font-size:13px;font-weight:700;">MTI：</label>
+        <select class="mti-select" id="mtiSelect" onchange="renderMsg()">
+          <option value="0100">0100 (授权请求)</option>
+          <option value="0110">0110 (授权响应)</option>
+          <option value="0420">0420 (冲正请求)</option>
+        </select>
+        <button class="preset-btn" onclick="applyPreset('authReq')">预设：0100 消费请求</button>
+        <button class="preset-btn" onclick="applyPreset('authResp')">预设：0110 余额不足(51)</button>
+        <button class="preset-btn" onclick="applyPreset('reversal')">预设：0420 超时冲正</button>
+      </div>
+
+      <div class="field-grid" id="fieldGrid"></div>
+
+      <div class="console">
+        <div class="console-row">
+          <div class="console-label">Primary Bitmap (64-bit Binary，每 4 位对应 1 个 Hex 字符)</div>
+          <div class="bin-grid" id="binOut"></div>
+        </div>
+        <div class="console-row">
+          <div class="console-label">Primary Bitmap (16-char Hex)</div>
+          <div style="color:#d8b4fe;font-size:16px;font-weight:700;letter-spacing:0.08em;" id="hexOut"></div>
+        </div>
+        <div class="console-row">
+          <div class="console-label">组装后的完整报文（蓝=MTI · 紫=Bitmap · 绿=Data Elements）</div>
+          <div class="raw-msg" id="rawOut"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Part 3: Mock Fault Injection -->
+    <div class="section">
+      <h2>交互式模拟：Mock 挡板异常注入（Fault Injection）</h2>
+      <p class="subtitle">点击不同故障按钮，查看发卡行/收单侧在收到异常响应码或畸形报文时应触发的正确行为：</p>
+      <div class="mock-grid">
+        <button class="mock-btn" onclick="inject('00')">F39=00 (正常通过)</button>
+        <button class="mock-btn" onclick="inject('51')">F39=51 (余额不足)</button>
+        <button class="mock-btn" onclick="inject('91')">F39=91 (发卡行不可用)</button>
+        <button class="mock-btn" onclick="inject('timeout')">模拟网络超时 (无响应)</button>
+        <button class="mock-btn" onclick="inject('malformed')">畸形报文 (Bitmap 与数据不匹配)</button>
+      </div>
+      <div class="mock-out" id="mockOut">点击上方按钮，查看 Mock 挡板返回的报文与系统预期行为。</div>
+    </div>
+
+    <!-- Part 4: Python Exercise -->
+    <div class="section">
+      <h2>动手实践：Python ISO 8583 报文打包与 Mock 模拟器</h2>
+      <p class="subtitle">打开同目录下的 <code>iso8583_mock_exercise.py</code>，实现 Bitmap 计算、报文打包与简易发卡行 Mock 处理器，跑通全部断言：</p>
+      <div class="cmd-box">cd module-03-iso8583-mock &amp;&amp; python3 iso8583_mock_exercise.py</div>
+    </div>
+  </div>
+
+  <script>
+    const FIELDS = [
+      { bit: 2, name: 'F2 · 主账号 (PAN)', val: '164111111111111111' },
+      { bit: 3, name: 'F3 · 处理码', val: '000000' },
+      { bit: 4, name: 'F4 · 交易金额 ($100)', val: '000000010000' },
+      { bit: 11, name: 'F11 · 流水号 (STAN)', val: '000123' },
+      { bit: 39, name: 'F39 · 响应码', val: '51' },
+      { bit: 49, name: 'F49 · 币种 (USD)', val: '840' },
+      { bit: 55, name: 'F55 · EMV TLV', val: '0129F2604A1B2C3D4' }
+    ];
+
+    let activeBits = new Set([2, 3, 4, 11, 49]);
+
+    function renderGrid() {
+      const grid = document.getElementById('fieldGrid');
+      grid.innerHTML = '';
+      FIELDS.forEach(f => {
+        const div = document.createElement('div');
+        div.className = 'field-card' + (activeBits.has(f.bit) ? ' selected' : '');
+        div.onclick = () => {
+          if (activeBits.has(f.bit)) activeBits.delete(f.bit);
+          else activeBits.add(f.bit);
+          renderGrid();
+          renderMsg();
+        };
+        div.innerHTML = `
+          <div class="field-top">
+            <span class="field-name">${f.name}</span>
+            <span class="field-num">Bit ${f.bit}</span>
+          </div>
+          <div class="field-val">${f.val}</div>
+        `;
+        grid.appendChild(div);
+      });
+    }
+
+    function renderMsg() {
+      const mti = document.getElementById('mtiSelect').value;
+      const bits = Array(64).fill(0);
+      activeBits.forEach(b => { if (b >= 1 && b <= 64) bits[b - 1] = 1; });
+
+      const binOut = document.getElementById('binOut');
+      binOut.innerHTML = '';
+      let hex = '';
+      for (let i = 0; i < 64; i += 4) {
+        const nibbleStr = bits.slice(i, i + 4).join('');
+        const h = parseInt(nibbleStr, 2).toString(16).toUpperCase();
+        hex += h;
+        const span = document.createElement('span');
+        span.className = 'nibble' + (nibbleStr.includes('1') ? ' has-one' : '');
+        span.textContent = nibbleStr;
+        binOut.appendChild(span);
+      }
+
+      document.getElementById('hexOut').textContent = hex;
+
+      const sortedFields = FIELDS.filter(f => activeBits.has(f.bit)).sort((a, b) => a.bit - b.bit);
+      const deHtml = sortedFields.map(f => `<span class="seg-de" title="${f.name}">${f.val}</span>`).join('');
+      document.getElementById('rawOut').innerHTML = `<span class="seg-mti">${mti}</span><span class="seg-bmp">${hex}</span>${deHtml}`;
+    }
+
+    function applyPreset(type) {
+      if (type === 'authReq') {
+        document.getElementById('mtiSelect').value = '0100';
+        activeBits = new Set([2, 3, 4, 11, 49, 55]);
+      } else if (type === 'authResp') {
+        document.getElementById('mtiSelect').value = '0110';
+        activeBits = new Set([2, 4, 11, 39]);
+      } else if (type === 'reversal') {
+        document.getElementById('mtiSelect').value = '0420';
+        activeBits = new Set([2, 4, 11, 49]);
+      }
+      renderGrid();
+      renderMsg();
+    }
+
+    function inject(code) {
+      const out = document.getElementById('mockOut');
+      if (code === '00') {
+        out.className = 'mock-out ok';
+        out.innerHTML = '<strong>[0110 · F39=00]</strong> 授权通过。上游打印小票，发卡行冻结对应额度。';
+      } else if (code === '51') {
+        out.className = 'mock-out warn';
+        out.innerHTML = '<strong>[0110 · F39=51]</strong> 余额不足拒绝。测试重点：确认<strong>不会产生冻结金额</strong>，且前端展示友好的余额不足提示，不触发自动冲正。';
+      } else if (code === '91') {
+        out.className = 'mock-out err';
+        out.innerHTML = '<strong>[0110 · F39=91]</strong> 发卡行系统不可用。测试重点：确认触发监控告警，且若配置了“代行授权（STIP）”策略，卡组织是否按限额接管。';
+      } else if (code === 'timeout') {
+        out.className = 'mock-out err';
+        out.innerHTML = '<strong>[Socket Timeout]</strong> 挡板故意延迟 10 秒不回包。测试重点：验证上游是否在阈值（如 5s）后<strong>自动发起 0420 冲正报文</strong>。';
+      } else if (code === 'malformed') {
+        out.className = 'mock-out err';
+        out.innerHTML = '<strong>[畸形报文注入]</strong> Bitmap 声明包含 F4，但报文体提前截断。测试重点：验证解析器捕获异常并返回 <code>F39=30 (格式错误)</code>，<strong>严禁引发服务进程崩溃（OOM/Panic）</strong>。';
+      }
+    }
+
+    renderGrid();
+    renderMsg();
+  </script>
+</body>
+</html>
