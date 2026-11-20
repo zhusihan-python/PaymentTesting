@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 2 实战练习 | Python T+1 清算自动对账</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --primary: #2563eb; --primary-bg: #eff6ff;
+      --green: #059669; --green-bg: #ecfdf5;
+      --red: #dc2626; --red-bg: #fef2f2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg); color: var(--text); padding: 24px 16px 60px; line-height: 1.6;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; }
+    .topbar a { text-decoration: none; color: var(--muted); font-weight: 600; }
+    .topbar a:hover { color: var(--text); }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: var(--muted); }
+
+    .status-bar {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+      gap: 10px; margin: 16px 0 12px;
+    }
+    .py-status {
+      font-size: 12.5px; font-weight: 700; padding: 4px 12px; border-radius: 999px;
+      background: var(--primary-bg); color: var(--primary);
+    }
+    .py-status.ready { background: var(--green-bg); color: var(--green); }
+
+    textarea.code-editor {
+      width: 100%; min-height: 400px; padding: 16px; border-radius: 12px;
+      border: 1px solid #334155; background: #0f172a; color: #e2e8f0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13.5px; line-height: 1.6; resize: vertical; tab-size: 4; outline: none;
+    }
+    textarea.code-editor:focus { border-color: var(--primary); }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    button.btn {
+      padding: 9px 18px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    button.btn:hover:not(:disabled) { background: #f1f5f9; }
+    button.btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    button.btn.primary:hover:not(:disabled) { opacity: 0.9; }
+    button.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .output-box {
+      margin-top: 16px; padding: 14px 16px; border-radius: 10px;
+      background: #1e293b; color: #f8fafc; font-family: ui-monospace, monospace;
+      font-size: 13px; white-space: pre-wrap; word-break: break-word; min-height: 70px;
+    }
+    .output-box.pass { background: var(--green-bg); color: #065f46; border: 1px solid #6ee7b7; }
+    .output-box.fail { background: var(--red-bg); color: #991b1b; border: 1px solid #fca5a5; }
+
+    .answer-panel {
+      display: none; margin-top: 20px; padding-top: 18px; border-top: 1px dashed var(--border);
+    }
+    .answer-panel.open { display: block; }
+    pre.ref-code {
+      background: #0f172a; color: #cbd5e1; padding: 16px; border-radius: 10px;
+      font-family: ui-monospace, monospace; font-size: 13px; overflow-x: auto; margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="./index.html">← 返回 Module 2 教程</a>
+      <a href="../index.html">教程总目录</a>
+    </div>
+
+    <div class="card">
+      <h1>Module 2 实战练习：T+1 清算自动对账脚本</h1>
+      <p class="subtitle">补全 <code>reconcile()</code> 函数，准确识别本地长款、本地短款、金额不一致与重复清算，点击运行使全部断言通过。</p>
+
+      <div class="status-bar">
+        <span class="py-status" id="pyStatus">⏳ 正在加载浏览器 Python 环境 (Pyodide)...</span>
+        <span style="font-size:12px;color:var(--muted);">提示：编辑框支持 Tab 键缩进</span>
+      </div>
+
+      <textarea class="code-editor" id="editor" spellcheck="false"></textarea>
+
+      <div class="btn-row">
+        <button class="btn primary" id="btnRun" disabled>▶ 运行代码并校验断言</button>
+        <button class="btn" id="btnReset">重置初始代码</button>
+        <button class="btn" id="btnReveal">Reveal Answer</button>
+      </div>
+
+      <div class="output-box" id="output">等待运行...</div>
+
+      <div class="answer-panel" id="answerPanel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <strong>参考实现（使用 Decimal 避免浮点精度丢失）：</strong>
+          <button class="btn" onclick="applySolution()">一键填入参考代码并运行</button>
+        </div>
+        <pre class="ref-code" id="refCodeDisplay"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const INITIAL_CODE = `from decimal import Decimal
+from typing import Dict, List
+
+# 1. 发卡行本地账务流水 (Local Ledger)
+LOCAL_LEDGER = [
+    {"txn_id": "TXN_001", "amount": Decimal("100.00")},  # 正常平账
+    {"txn_id": "TXN_002", "amount": Decimal("50.00")},   # 本地长款（卡组织未清算）
+    {"txn_id": "TXN_003", "amount": Decimal("80.00")},   # 金额不一致（卡组织多扣 $5 小费）
+    {"txn_id": "TXN_004", "amount": Decimal("20.00")},   # 正常，但卡组织文件里重复发了两次
+]
+
+# 2. 卡组织 T+1 清算文件 (Card Scheme Clearing File)
+SCHEME_CLEARING = [
+    {"txn_id": "TXN_001", "amount": Decimal("100.00")},
+    {"txn_id": "TXN_003", "amount": Decimal("85.00")},
+    {"txn_id": "TXN_004", "amount": Decimal("20.00")},
+    {"txn_id": "TXN_004", "amount": Decimal("20.00")},   # 重复清算记录
+    {"txn_id": "TXN_005", "amount": Decimal("120.00")},  # 本地短款（高危资损：本地无记录）
+]
+
+def reconcile(local: List[Dict], scheme: List[Dict]) -> Dict[str, List[str]]:
+    result = {
+        "local_long": [],
+        "local_short": [],
+        "amount_mismatch": [],
+        "duplicate_clearing": [],
+    }
+    # TODO: 在下方编写双向对账逻辑
+
+    return result
+
+# --- 自动化验证断言 ---
+report = reconcile(LOCAL_LEDGER, SCHEME_CLEARING)
+print("对账结果:", report)
+
+assert report["local_long"] == ["TXN_002"], f"长款识别错误: {report['local_long']}"
+assert report["local_short"] == ["TXN_005"], f"短款识别错误: {report['local_short']}"
+assert report["amount_mismatch"] == ["TXN_003"], f"金额差异识别错误: {report['amount_mismatch']}"
+assert report["duplicate_clearing"] == ["TXN_004"], f"重复清算识别错误: {report['duplicate_clearing']}"
+print("✅ 所有对账断言全部通过！")`;
+
+    const SOLUTION_FUNC = `def reconcile(local: List[Dict], scheme: List[Dict]) -> Dict[str, List[str]]:
+    local_map = {item["txn_id"]: item["amount"] for item in local}
+    scheme_map = {}
+    duplicates = []
+
+    for item in scheme:
+        tid = item["txn_id"]
+        if tid in scheme_map:
+            if tid not in duplicates:
+                duplicates.append(tid)
+        else:
+            scheme_map[tid] = item["amount"]
+
+    local_long = [tid for tid in local_map if tid not in scheme_map]
+    local_short = [tid for tid in scheme_map if tid not in local_map]
+    amount_mismatch = [
+        tid for tid in local_map
+        if tid in scheme_map and local_map[tid] != scheme_map[tid]
+    ]
+
+    return {
+        "local_long": local_long,
+        "local_short": local_short,
+        "amount_mismatch": amount_mismatch,
+        "duplicate_clearing": duplicates,
+    }`;
+
+    const editor = document.getElementById('editor');
+    const output = document.getElementById('output');
+    const btnRun = document.getElementById('btnRun');
+    const pyStatus = document.getElementById('pyStatus');
+
+    editor.value = INITIAL_CODE;
+    document.getElementById('refCodeDisplay').textContent = SOLUTION_FUNC;
+
+    // Tab indentation support
+    editor.addEventListener('keydown', function (e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart, end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 4;
+      }
+    });
+
+    let pyodide = null;
+    async function initPyodide() {
+      try {
+        pyodide = await loadPyodide();
+        pyStatus.textContent = '✅ Python 3 环境已就绪';
+        pyStatus.classList.add('ready');
+        btnRun.disabled = false;
+      } catch (err) {
+        pyStatus.textContent = '❌ Python 环境加载失败，请刷新重试';
+      }
+    }
+    initPyodide();
+
+    async function runCode() {
+      if (!pyodide) return;
+      let logs = [];
+      pyodide.setStdout({ batched: (msg) => logs.push(msg) });
+      pyodide.setStderr({ batched: (msg) => logs.push(msg) });
+      output.className = 'output-box';
+      output.textContent = '运行中...';
+      try {
+        await pyodide.runPythonAsync(editor.value);
+        output.className = 'output-box pass';
+        output.textContent = logs.join('\n') || '运行完成（无输出）';
+      } catch (err) {
+        output.className = 'output-box fail';
+        output.textContent = (logs.length ? logs.join('\n') + '\n\n' : '') + err.message;
+      }
+    }
+
+    btnRun.onclick = runCode;
+    document.getElementById('btnReset').onclick = () => {
+      editor.value = INITIAL_CODE;
+      output.className = 'output-box';
+      output.textContent = '已重置代码，等待运行...';
+    };
+    document.getElementById('btnReveal').onclick = function () {
+      const open = document.getElementById('answerPanel').classList.toggle('open');
+      this.textContent = open ? 'Hide Answer' : 'Reveal Answer';
+    };
+    function applySolution() {
+      editor.value = INITIAL_CODE.replace(/def reconcile[\s\S]*?return result/, SOLUTION_FUNC);
+      runCode();
+    }
+  </script>
+</body>
+</html>

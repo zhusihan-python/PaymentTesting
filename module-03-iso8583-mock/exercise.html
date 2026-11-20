@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 3 实战练习 | Python ISO 8583 打包与 Mock 挡板</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --primary: #2563eb; --primary-bg: #eff6ff;
+      --green: #059669; --green-bg: #ecfdf5;
+      --red: #dc2626; --red-bg: #fef2f2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg); color: var(--text); padding: 24px 16px 60px; line-height: 1.6;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; }
+    .topbar a { text-decoration: none; color: var(--muted); font-weight: 600; }
+    .topbar a:hover { color: var(--text); }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: var(--muted); }
+
+    .status-bar {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+      gap: 10px; margin: 16px 0 12px;
+    }
+    .py-status {
+      font-size: 12.5px; font-weight: 700; padding: 4px 12px; border-radius: 999px;
+      background: var(--primary-bg); color: var(--primary);
+    }
+    .py-status.ready { background: var(--green-bg); color: var(--green); }
+
+    textarea.code-editor {
+      width: 100%; min-height: 440px; padding: 16px; border-radius: 12px;
+      border: 1px solid #334155; background: #0f172a; color: #e2e8f0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13.5px; line-height: 1.6; resize: vertical; tab-size: 4; outline: none;
+    }
+    textarea.code-editor:focus { border-color: var(--primary); }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    button.btn {
+      padding: 9px 18px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    button.btn:hover:not(:disabled) { background: #f1f5f9; }
+    button.btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    button.btn.primary:hover:not(:disabled) { opacity: 0.9; }
+    button.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .output-box {
+      margin-top: 16px; padding: 14px 16px; border-radius: 10px;
+      background: #1e293b; color: #f8fafc; font-family: ui-monospace, monospace;
+      font-size: 13px; white-space: pre-wrap; word-break: break-word; min-height: 70px;
+    }
+    .output-box.pass { background: var(--green-bg); color: #065f46; border: 1px solid #6ee7b7; }
+    .output-box.fail { background: var(--red-bg); color: #991b1b; border: 1px solid #fca5a5; }
+
+    .answer-panel {
+      display: none; margin-top: 20px; padding-top: 18px; border-top: 1px dashed var(--border);
+    }
+    .answer-panel.open { display: block; }
+    pre.ref-code {
+      background: #0f172a; color: #cbd5e1; padding: 16px; border-radius: 10px;
+      font-family: ui-monospace, monospace; font-size: 13px; overflow-x: auto; margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="./index.html">← 返回 Module 3 教程</a>
+      <a href="../index.html">教程总目录</a>
+    </div>
+
+    <div class="card">
+      <h1>Module 3 实战练习：ISO 8583 报文打包与 Mock 模拟器</h1>
+      <p class="subtitle">补全 <code>build_primary_bitmap()</code>、<code>pack_iso8583()</code> 和 <code>mock_issuer_auth()</code> 三个函数，点击运行验证所有断言。</p>
+
+      <div class="status-bar">
+        <span class="py-status" id="pyStatus">⏳ 正在加载浏览器 Python 环境 (Pyodide)...</span>
+        <span style="font-size:12px;color:var(--muted);">提示：编辑框支持 Tab 键缩进</span>
+      </div>
+
+      <textarea class="code-editor" id="editor" spellcheck="false"></textarea>
+
+      <div class="btn-row">
+        <button class="btn primary" id="btnRun" disabled>▶ 运行代码并校验断言</button>
+        <button class="btn" id="btnReset">重置初始代码</button>
+        <button class="btn" id="btnReveal">Reveal Answer</button>
+      </div>
+
+      <div class="output-box" id="output">等待运行...</div>
+
+      <div class="answer-panel" id="answerPanel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <strong>参考实现：</strong>
+          <button class="btn" onclick="applySolution()">一键填入参考代码并运行</button>
+        </div>
+        <pre class="ref-code" id="refCodeDisplay"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const INITIAL_CODE = `from typing import Dict, List
+
+def build_primary_bitmap(field_numbers: List[int]) -> str:
+    """
+    TODO 1: 根据域编号列表（1-64），生成 16 位大写十六进制 Primary Bitmap。
+    示例：[2, 3, 4, 11] -> '7020000000000000'
+    """
+    bits = ["0"] * 64
+    # 在下方编写你的代码
+
+    return ""
+
+def pack_iso8583(mti: str, fields: Dict[int, str]) -> str:
+    """
+    TODO 2: 组装简化版 ISO 8583 报文：MTI + 16位Hex Bitmap + 按域号升序拼接的值。
+    """
+    # 在下方编写你的代码
+
+    return ""
+
+def mock_issuer_auth(balance_cents: int, req_fields: Dict[int, str]) -> Dict[int, str]:
+    """
+    TODO 3: 模拟发卡行 0100 授权处理，返回 0110 响应字段字典（含原 F11 与 F39）：
+    - 缺少 F4 或 F4 不是纯数字 -> F39 = "30"（格式错误）
+    - int(F4) > balance_cents -> F39 = "51"（余额不足）
+    - 否则 -> F39 = "00"（授权通过）
+    """
+    resp = {11: req_fields.get(11, "000000")}
+    # 在下方编写你的代码
+
+    return resp
+
+# --- 自动化验证断言 ---
+bmp = build_primary_bitmap([2, 3, 4, 11])
+assert bmp == "7020000000000000", f"Bitmap 计算错误: {bmp}"
+
+raw = pack_iso8583("0100", {11: "000123", 4: "000000010000", 2: "164111111111111111", 3: "000000"})
+assert raw == "01007020000000000000164111111111111111000000000000010000000123", f"报文组装错误: {raw}"
+
+assert mock_issuer_auth(10000, {4: "000000005000", 11: "000001"})[39] == "00"
+assert mock_issuer_auth(10000, {4: "000000020000", 11: "000002"})[39] == "51"
+assert mock_issuer_auth(10000, {4: "INVALID_AMT", 11: "000003"})[39] == "30"
+
+print("✅ Module 3 所有 ISO 8583 协议与 Mock 断言全部通过！")`;
+
+    const SOLUTION_CODE = `def build_primary_bitmap(field_numbers: List[int]) -> str:
+    bits = ["0"] * 64
+    for num in field_numbers:
+        if 1 <= num <= 64:
+            bits[num - 1] = "1"
+    return f"{int(''.join(bits), 2):016X}"
+
+def pack_iso8583(mti: str, fields: Dict[int, str]) -> str:
+    bmp = build_primary_bitmap(list(fields.keys()))
+    body = "".join(fields[k] for k in sorted(fields.keys()))
+    return f"{mti}{bmp}{body}"
+
+def mock_issuer_auth(balance_cents: int, req_fields: Dict[int, str]) -> Dict[int, str]:
+    resp = {11: req_fields.get(11, "000000")}
+    amt_str = req_fields.get(4, "")
+    if not amt_str.isdigit():
+        resp[39] = "30"
+    elif int(amt_str) > balance_cents:
+        resp[39] = "51"
+    else:
+        resp[39] = "00"
+    return resp`;
+
+    const editor = document.getElementById('editor');
+    const output = document.getElementById('output');
+    const btnRun = document.getElementById('btnRun');
+    const pyStatus = document.getElementById('pyStatus');
+
+    editor.value = INITIAL_CODE;
+    document.getElementById('refCodeDisplay').textContent = SOLUTION_CODE;
+
+    editor.addEventListener('keydown', function (e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart, end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 4;
+      }
+    });
+
+    let pyodide = null;
+    async function initPyodide() {
+      try {
+        pyodide = await loadPyodide();
+        pyStatus.textContent = '✅ Python 3 环境已就绪';
+        pyStatus.classList.add('ready');
+        btnRun.disabled = false;
+      } catch (err) {
+        pyStatus.textContent = '❌ Python 环境加载失败，请刷新重试';
+      }
+    }
+    initPyodide();
+
+    async function runCode() {
+      if (!pyodide) return;
+      let logs = [];
+      pyodide.setStdout({ batched: (msg) => logs.push(msg) });
+      pyodide.setStderr({ batched: (msg) => logs.push(msg) });
+      output.className = 'output-box';
+      output.textContent = '运行中...';
+      try {
+        await pyodide.runPythonAsync(editor.value);
+        output.className = 'output-box pass';
+        output.textContent = logs.join('\n') || '运行完成（无输出）';
+      } catch (err) {
+        output.className = 'output-box fail';
+        output.textContent = (logs.length ? logs.join('\n') + '\n\n' : '') + err.message;
+      }
+    }
+
+    btnRun.onclick = runCode;
+    document.getElementById('btnReset').onclick = () => {
+      editor.value = INITIAL_CODE;
+      output.className = 'output-box';
+      output.textContent = '已重置代码，等待运行...';
+    };
+    document.getElementById('btnReveal').onclick = function () {
+      const open = document.getElementById('answerPanel').classList.toggle('open');
+      this.textContent = open ? 'Hide Answer' : 'Reveal Answer';
+    };
+    function applySolution() {
+      editor.value = INITIAL_CODE.replace(/def build_primary_bitmap[\s\S]*?return resp/, SOLUTION_CODE);
+      runCode();
+    }
+  </script>
+</body>
+</html>
