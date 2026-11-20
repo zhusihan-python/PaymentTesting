@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 5 实战练习 | 数字钱包生命周期联动测试矩阵</title>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --green: #059669; --green-bg: #ecfdf5;
+      --red: #dc2626; --red-bg: #fef2f2;
+      --primary: #2563eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg); color: var(--text); padding: 24px 16px 60px; line-height: 1.6;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; }
+    .topbar a { text-decoration: none; color: var(--muted); font-weight: 600; }
+    .topbar a:hover { color: var(--text); }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 18px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 18px; }
+    th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+    th { background: #f1f5f9; font-weight: 700; }
+
+    select.cell-select {
+      width: 100%; padding: 7px 8px; border-radius: 6px; border: 1.5px solid var(--border);
+      background: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    select.cell-select.correct { border-color: var(--green); background: var(--green-bg); color: #065f46; }
+    select.cell-select.wrong { border-color: var(--red); background: var(--red-bg); color: #991b1b; }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    button.btn {
+      padding: 9px 18px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    button.btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    .score-box { font-size: 14px; font-weight: 700; margin-left: auto; }
+
+    .explain-box {
+      display: none; margin-top: 20px; padding-top: 18px; border-top: 1px dashed var(--border);
+      font-size: 13.5px;
+    }
+    .explain-box.open { display: block; }
+    .explain-item { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="./index.html">← 返回 Module 5 教程</a>
+      <a href="../index.html">教程总目录</a>
+    </div>
+
+    <div class="card">
+      <h1>Module 5 实战练习：多设备 Tokenization 联动测试矩阵</h1>
+      <p class="subtitle">初始条件：主卡（FPAN）、iPhone（DPAN_1）、Apple Watch（DPAN_2）均为 <strong>Active</strong>。请为每种独立操作选择预期结果：</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:31%;">触发操作（各自独立发生）</th>
+            <th style="width:23%;">主卡 (FPAN)</th>
+            <th style="width:23%;">iPhone (DPAN_1)</th>
+            <th style="width:23%;">Watch (DPAN_2)</th>
+          </tr>
+        </thead>
+        <tbody id="matrixBody"></tbody>
+      </table>
+
+      <div class="btn-row">
+        <button class="btn primary" onclick="checkMatrix()">提交并校验矩阵</button>
+        <button class="btn" onclick="resetMatrix()">重置选项</button>
+        <button class="btn" id="btnReveal" onclick="revealAnswer()">Reveal Answer</button>
+        <span class="score-box" id="scoreBox"></span>
+      </div>
+
+      <div class="explain-box" id="explainBox">
+        <h3 style="margin-bottom:10px;">核心测试矩阵解析（面试高频考点）</h3>
+        <div class="explain-item"><strong>1. 临时冻结主卡（Freeze FPAN）：</strong>主卡与所有关联 DPAN 均应进入 <code>Suspended（挂起）</code>；解冻主卡时，所有被挂起的 DPAN 同步恢复为 <code>Active</code>。</div>
+        <div class="explain-item"><strong>2. 仅删除 iPhone 上的卡片：</strong>单向隔离！仅 <code>DPAN_1</code> 注销（Deactivated），主卡 FPAN 和手表 <code>DPAN_2</code> 必须保持 <code>Active</code>。</div>
+        <div class="explain-item"><strong>3. 挂失并永久停用主卡（Lost/Closed）：</strong>最高安全级别！主卡与名下所有设备令牌（DPAN_1、DPAN_2）必须全部永久注销（<code>Deactivated</code>），防止盗刷。</div>
+        <div class="explain-item"><strong>4. iPhone 开启“丢失模式”（Lost Mode）：</strong>仅针对丢失设备生效！iPhone 侧 <code>DPAN_1</code> 被挂起（<code>Suspended</code>），主卡与手表 <code>DPAN_2</code> 仍可正常使用。</div>
+        <div class="explain-item"><strong>5. 主卡自然到期续卡（Card Renewal）：</strong>新卡发卡后，发卡行通过 VTS/MDES 推送新有效期，已绑定的 <code>DPAN_1</code> 与 <code>DPAN_2</code> 均保持 <code>Active</code> 无感续期。</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const OPTIONS = [
+      { v: '', t: '-- 请选择 --' },
+      { v: 'Active', t: 'Active (正常可用)' },
+      { v: 'Suspended', t: 'Suspended (临时挂起)' },
+      { v: 'Deactivated', t: 'Deactivated (永久注销)' }
+    ];
+
+    const ROWS = [
+      { id: 'r1', label: '1. 用户在 App 临时冻结主卡 (Freeze FPAN)', ans: ['Suspended', 'Suspended', 'Suspended'] },
+      { id: 'r2', label: '2. 用户仅在 iPhone 钱包删除该卡片', ans: ['Active', 'Deactivated', 'Active'] },
+      { id: 'r3', label: '3. 用户挂失主卡并销卡 (Lost / Closed)', ans: ['Deactivated', 'Deactivated', 'Deactivated'] },
+      { id: 'r4', label: '4. 用户仅对丢失的 iPhone 开启“丢失模式”', ans: ['Active', 'Suspended', 'Active'] },
+      { id: 'r5', label: '5. 主卡到期自动续卡（同卡号更新有效期）', ans: ['Active', 'Active', 'Active'] }
+    ];
+
+    function buildTable() {
+      const tbody = document.getElementById('matrixBody');
+      tbody.innerHTML = '';
+      ROWS.forEach((row) => {
+        const tr = document.createElement('tr');
+        let html = `<td><strong>${row.label}</strong></td>`;
+        for (let col = 0; col < 3; col++) {
+          const opts = OPTIONS.map(o => `<option value="${o.v}">${o.t}</option>`).join('');
+          html += `<td><select class="cell-select" id="${row.id}-c${col}">${opts}</select></td>`;
+        }
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function checkMatrix() {
+      let correct = 0, total = ROWS.length * 3;
+      ROWS.forEach(row => {
+        for (let col = 0; col < 3; col++) {
+          const sel = document.getElementById(`${row.id}-c${col}`);
+          sel.classList.remove('correct', 'wrong');
+          if (sel.value === row.ans[col]) {
+            sel.classList.add('correct');
+            correct++;
+          } else {
+            sel.classList.add('wrong');
+          }
+        }
+      });
+      const box = document.getElementById('scoreBox');
+      box.style.color = correct === total ? '#059669' : '#dc2626';
+      box.textContent = correct === total ? `✅ 满分通过 (${correct}/${total})！` : `得分：${correct}/${total}（标红项有误，可调整或查看解析）`;
+    }
+
+    function resetMatrix() {
+      buildTable();
+      document.getElementById('scoreBox').textContent = '';
+    }
+
+    function revealAnswer() {
+      const box = document.getElementById('explainBox');
+      const isOpen = box.classList.toggle('open');
+      document.getElementById('btnReveal').textContent = isOpen ? 'Hide Answer' : 'Reveal Answer';
+      if (isOpen) {
+        ROWS.forEach(row => {
+          for (let col = 0; col < 3; col++) {
+            const sel = document.getElementById(`${row.id}-c${col}`);
+            sel.value = row.ans[col];
+            sel.className = 'cell-select correct';
+          }
+        });
+        document.getElementById('scoreBox').style.color = '#059669';
+        document.getElementById('scoreBox').textContent = '已填充全部标准答案';
+      }
+    }
+
+    buildTable();
+  </script>
+</body>
+</html>

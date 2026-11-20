@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 5 | 数字钱包与令牌化（Tokenization）</title>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --blue: #2563eb; --blue-bg: #eff6ff;
+      --purple: #7c3aed; --purple-bg: #f5f3ff;
+      --green: #059669; --green-bg: #ecfdf5;
+      --amber: #d97706; --amber-bg: #fffbeb;
+      --red: #dc2626; --red-bg: #fef2f2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg); color: var(--text); padding: 24px 16px 60px; line-height: 1.65;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; }
+    .topbar a { text-decoration: none; color: var(--muted); font-weight: 600; }
+    .topbar a:hover { color: var(--text); }
+
+    .section {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 26px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    }
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+    h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    h3 { font-size: 15px; font-weight: 700; margin: 18px 0 10px; }
+    .subtitle { font-size: 14px; color: var(--muted); }
+
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 13.5px; }
+    th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+    th { background: #f1f5f9; font-weight: 700; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: #f1f5f9; padding: 2px 5px; border-radius: 4px; }
+
+    .idv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+    .idv-card { border-radius: 10px; padding: 14px; font-size: 13px; border: 1px solid var(--border); }
+    .idv-card.g { background: var(--green-bg); border-color: #6ee7b7; }
+    .idv-card.y { background: var(--amber-bg); border-color: #fcd34d; }
+    .idv-card.r { background: var(--red-bg); border-color: #fca5a5; }
+    .idv-card strong { display: block; font-size: 14px; margin-bottom: 4px; }
+
+    /* Tabs */
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 20px; }
+    .tab { padding: 7px 15px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+    /* Diagram */
+    .diagram { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+    .node { background: var(--bg); border: 2px solid var(--border); border-radius: 12px; padding: 14px 10px; text-align: center; transition: all 0.25s; }
+    .node-title { font-weight: 700; font-size: 14px; }
+    .node-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .node.hl-blue { border-color: var(--blue); background: var(--blue-bg); transform: translateY(-2px); }
+    .node.hl-amber { border-color: var(--amber); background: var(--amber-bg); transform: translateY(-2px); }
+    .node.hl-green { border-color: var(--green); background: var(--green-bg); transform: translateY(-2px); }
+    .node.hl-red { border-color: var(--red); background: var(--red-bg); transform: translateY(-2px); }
+    .node.hl-purple { border-color: var(--purple); background: var(--purple-bg); transform: translateY(-2px); }
+
+    /* Banner */
+    .banner { border-radius: 12px; padding: 16px 20px; margin-bottom: 18px; border-left: 5px solid var(--blue); background: var(--blue-bg); }
+    .banner.amber { border-left-color: var(--amber); background: var(--amber-bg); }
+    .banner.green { border-left-color: var(--green); background: var(--green-bg); }
+    .banner.red { border-left-color: var(--red); background: var(--red-bg); }
+    .banner.purple { border-left-color: var(--purple); background: var(--purple-bg); }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .badge { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; color: #fff; background: var(--blue); }
+    .banner.amber .badge { background: var(--amber); }
+    .banner.green .badge { background: var(--green); }
+    .banner.red .badge { background: var(--red); }
+    .banner.purple .badge { background: var(--purple); }
+    .code-tag { font-family: ui-monospace, monospace; font-size: 12px; background: rgba(15,23,42,0.08); padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+    .step-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .step-detail { font-size: 14px; color: #334155; }
+
+    /* Token Status Grid */
+    .state-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: #fff; }
+    .stat-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .stat-val { font-size: 15px; font-weight: 800; margin-top: 4px; }
+    .st-active { color: var(--green); }
+    .st-pending { color: var(--amber); }
+    .st-dead { color: var(--red); }
+
+    .controls { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
+    .dots { display: flex; gap: 8px; }
+    .dot { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .dot.active { background: var(--text); color: #fff; border-color: var(--text); }
+    .btns { display: flex; gap: 8px; }
+    button.btn, a.cta-btn {
+      padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; color: var(--text);
+    }
+    button.btn.primary, a.cta-btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .footer-cta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+    @media (max-width: 700px) { .diagram { grid-template-columns: repeat(2, 1fr); } .idv-grid, .state-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="../index.html">← 返回教程总目录</a>
+      <a href="./exercise.html">直达交互式测试矩阵练习 →</a>
+    </div>
+
+    <!-- Part 1: Mental Models -->
+    <div class="section">
+      <h1>Module 5：数字钱包与令牌化（Tokenization）</h1>
+      <p class="subtitle">用户把卡绑进 Apple Pay / Google Pay 时，手机里存的从来不是真实卡号，而是卡组织颁发的“替身令牌”。</p>
+
+      <h3>1. FPAN（真实主卡号） vs DPAN（设备令牌）</h3>
+      <table>
+        <thead><tr><th>维度</th><th>FPAN (Funding PAN)</th><th>DPAN (Device PAN / Token)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>本质</strong></td><td>发卡行颁发的真实 16 位银行卡号</td><td>由卡组织令牌服务（<strong>Visa VTS / MC MDES</strong>）生成的虚拟替身卡号</td></tr>
+          <tr><td><strong>存储位置</strong></td><td>发卡行核心系统、实体卡片</td><td>手机安全芯片（Secure Element / SE）或云端钱包</td></tr>
+          <tr><td><strong>对应关系</strong></td><td>1 张主卡（FPAN）</td><td>可对应 <strong>N 个不同设备的 DPAN</strong>（iPhone、Apple Watch、iPad 各一个）</td></tr>
+          <tr><td><strong>交易过程</strong></td><td>发卡行最终在主卡账务扣款</td><td>POS 收到的是 DPAN → 卡组织内部映射还原为 FPAN → 转发给发卡行</td></tr>
+        </tbody>
+      </table>
+
+      <h3>2. 绑卡身份核验（ID&amp;V）三条风控路由</h3>
+      <div class="idv-grid">
+        <div class="idv-card g"><strong>🟢 绿通（Green Path）</strong>低风险（如 App 内一键推送绑卡，已登录验密），直接激活 DPAN，无需二次验证。</div>
+        <div class="idv-card y"><strong>🟡 黄通（Yellow Path）</strong>中风险（如手动输入卡号绑卡），下发<strong>短信 OTP / 邮箱验证码 / 客服核身</strong>，通过后激活。</div>
+        <div class="idv-card r"><strong>🔴 红通（Red Path）</strong>高风险（如设备越狱、黑名单、卡已冻结），发卡行直接拒绝绑卡请求。</div>
+      </div>
+    </div>
+
+    <!-- Part 2: Interactive DFD -->
+    <div class="section">
+      <h2>交互式分步 DFD：绑卡令牌化与主卡挂失联动</h2>
+      <p class="subtitle">切换下方两个高频测试场景，观察 FPAN 与多设备 DPAN 的状态如何同步变化。</p>
+
+      <div class="tabs">
+        <button class="tab active" onclick="selectScenario('provision', this)">场景 A：手动绑卡（黄通 OTP 激活）</button>
+        <button class="tab" onclick="selectScenario('sync', this)">场景 B：主卡挂失/删卡联动</button>
+      </div>
+
+      <div class="diagram">
+        <div class="node" id="n-dev"><div class="node-title">Apple / Google Wallet</div><div class="node-sub">iPhone &amp; Watch 钱包</div></div>
+        <div class="node" id="n-tsp"><div class="node-title">卡组织 TSP</div><div class="node-sub">Visa VTS / MC MDES</div></div>
+        <div class="node" id="n-iss"><div class="node-title">发卡行 CMS</div><div class="node-sub">风控决策与状态同步</div></div>
+        <div class="node" id="n-user"><div class="node-title">持卡人</div><div class="node-sub">接收 OTP / 操作挂失</div></div>
+      </div>
+
+      <div class="banner" id="banner">
+        <div class="meta">
+          <span class="badge" id="badge"></span>
+          <span class="code-tag" id="payload"></span>
+        </div>
+        <div class="step-title" id="title"></div>
+        <div class="step-detail" id="detail"></div>
+      </div>
+
+      <div class="state-grid">
+        <div class="stat-card"><div class="stat-label">主卡 FPAN (尾号 1111)</div><div class="stat-val" id="s-fpan"></div></div>
+        <div class="stat-card"><div class="stat-label">iPhone 令牌 (DPAN_1)</div><div class="stat-val" id="s-dpan1"></div></div>
+        <div class="stat-card"><div class="stat-label">Watch 令牌 (DPAN_2)</div><div class="stat-val" id="s-dpan2"></div></div>
+      </div>
+
+      <div class="controls">
+        <div class="dots" id="dots"></div>
+        <div class="btns">
+          <button class="btn" id="btnPrev">上一步</button>
+          <button class="btn primary" id="btnNext">下一步</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Part 3: Next Action -->
+    <div class="section footer-cta">
+      <div>
+        <h3 style="margin:0 0 4px;">下一步：交互式多设备生命周期测试矩阵</h3>
+        <p class="subtitle">亲手填写 5 种核心操作对 FPAN 与多设备 DPAN 的状态影响，即时评分并查看解析。</p>
+      </div>
+      <a class="cta-btn primary" href="./exercise.html">进入交互式矩阵练习 →</a>
+    </div>
+  </div>
+
+  <script>
+    const SCENARIOS = {
+      provision: [
+        {
+          color: 'blue', badge: '发起绑卡', payload: 'Check Eligibility (FPAN + Device Info)',
+          title: '1. 用户在 iPhone 手动输入卡号申请绑卡', nodes: ['user', 'dev', 'tsp', 'iss'],
+          detail: 'Apple Wallet 收集设备风险评分（如位置、Apple ID 历史）并经 VTS/MDES 转发给发卡行校验卡片资格。',
+          fpan: ['Active', 'st-active'], d1: ['未生成', ''], d2: ['Active (已有)', 'st-active']
+        },
+        {
+          color: 'amber', badge: '黄通决策', payload: 'Decision = REQUIRE_ADDITIONAL_AUTH (OTP)',
+          title: '2. 发卡行风控判定走“黄通（Yellow Path）”', nodes: ['iss', 'tsp', 'dev'],
+          detail: '发卡行确认卡片有效，但因是手动输卡号，要求用户进行短信 OTP 验证。此时 VTS 先生成一个处于“待激活”状态的 DPAN_1。',
+          fpan: ['Active', 'st-active'], d1: ['Inactive (待验证)', 'st-pending'], d2: ['Active (已有)', 'st-active']
+        },
+        {
+          color: 'purple', badge: '身份核验', payload: 'SMS OTP: 682910 -> Verify Success',
+          title: '3. 用户输入短信验证码完成 ID&V', nodes: ['user', 'dev', 'iss'],
+          detail: '发卡行发送 6 位 OTP 至用户预留手机号。用户输入正确验证码后，发卡行通知 VTS/MDES 激活该令牌。',
+          fpan: ['Active', 'st-active'], d1: ['校验通过，激活中', 'st-pending'], d2: ['Active (已有)', 'st-active']
+        },
+        {
+          color: 'green', badge: '绑卡完成', payload: 'Token Activated (DPAN_1 -> SE 芯片)',
+          title: '4. DPAN_1 写入手机安全芯片，可挥卡支付', nodes: ['tsp', 'dev'],
+          detail: '令牌状态变为 Active，写入 iPhone 安全芯片。此后每次 Apple Pay 消费均使用 DPAN_1 + 动态加密密文，绝不暴露真实卡号。',
+          fpan: ['Active', 'st-active'], d1: ['Active (可支付)', 'st-active'], d2: ['Active (已有)', 'st-active']
+        }
+      ],
+      sync: [
+        {
+          color: 'blue', badge: '初始状态', payload: '1 FPAN 绑定 2 台设备令牌',
+          title: '1. 主卡同时绑定了 iPhone 与 Apple Watch', nodes: ['dev', 'iss'],
+          detail: '初始状态下，主卡（FPAN）以及两台设备的令牌（DPAN_1、DPAN_2）均处于 Active 正常可用状态。',
+          fpan: ['Active', 'st-active'], d1: ['Active', 'st-active'], d2: ['Active', 'st-active']
+        },
+        {
+          color: 'amber', badge: '单端删卡', payload: 'Delete Token (仅删除 DPAN_1)',
+          title: '2. 用户仅在 iPhone 钱包里移除了卡片', nodes: ['user', 'dev', 'tsp', 'iss'],
+          detail: '测试重点（正向隔离）：用户在 iPhone 上删除卡片，仅注销 DPAN_1；主卡 FPAN 和手表上的 DPAN_2 必须保持 Active 不受影响！',
+          fpan: ['Active (不受影响)', 'st-active'], d1: ['Deactivated (已删)', 'st-dead'], d2: ['Active (不受影响)', 'st-active']
+        },
+        {
+          color: 'red', badge: '主卡挂失', payload: 'FPAN = LOST -> Push Lifecycle Update',
+          title: '3. 用户实体卡丢失，在 App 发起主卡挂失', nodes: ['user', 'iss', 'tsp'],
+          detail: '发卡行将 FPAN 置为 Lost，并必须主动调用 VTS/MDES 生命周期接口，同步吊销或挂起该主卡下所有关联的活跃令牌。',
+          fpan: ['Lost (永久停用)', 'st-dead'], d1: ['Deactivated', 'st-dead'], d2: ['Deactivated (联动停用)', 'st-dead']
+        },
+        {
+          color: 'green', badge: '换卡无感更新', payload: 'Reissue New FPAN -> Auto-Update Token',
+          title: '4. 进阶特性：换卡不换令牌（Card Replacement）', nodes: ['iss', 'tsp', 'dev'],
+          detail: '若支持卡组织自动更新服务，发卡行补发新主卡后可通知 TSP 将原活跃令牌无缝重新映射到新 FPAN，用户无需重新绑卡。',
+          fpan: ['New FPAN Active', 'st-active'], d1: ['可重新绑新卡', 'st-pending'], d2: ['若换卡保留可自动更新', 'st-active']
+        }
+      ]
+    };
+
+    let currentKey = 'provision', stepIdx = 0;
+
+    function selectScenario(key, btn) {
+      currentKey = key; stepIdx = 0;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    }
+
+    function render() {
+      const list = SCENARIOS[currentKey], s = list[stepIdx];
+      ['dev', 'tsp', 'iss', 'user'].forEach(id => {
+        document.getElementById('n-' + id).className = 'node' + (s.nodes.includes(id) ? ' hl-' + s.color : '');
+      });
+      document.getElementById('banner').className = 'banner ' + s.color;
+      document.getElementById('badge').textContent = s.badge;
+      document.getElementById('payload').textContent = s.payload;
+      document.getElementById('title').textContent = s.title;
+      document.getElementById('detail').textContent = s.detail;
+
+      document.getElementById('s-fpan').textContent = s.fpan[0];
+      document.getElementById('s-fpan').className = 'stat-val ' + s.fpan[1];
+      document.getElementById('s-dpan1').textContent = s.d1[0];
+      document.getElementById('s-dpan1').className = 'stat-val ' + s.d1[1];
+      document.getElementById('s-dpan2').textContent = s.d2[0];
+      document.getElementById('s-dpan2').className = 'stat-val ' + s.d2[1];
+
+      const dots = document.getElementById('dots');
+      dots.innerHTML = '';
+      list.forEach((_, i) => {
+        const d = document.createElement('button');
+        d.className = 'dot' + (i === stepIdx ? ' active' : '');
+        d.textContent = i + 1;
+        d.onclick = () => { stepIdx = i; render(); };
+        dots.appendChild(d);
+      });
+      document.getElementById('btnPrev').disabled = stepIdx === 0;
+      document.getElementById('btnNext').disabled = stepIdx === list.length - 1;
+    }
+
+    document.getElementById('btnPrev').onclick = () => { if (stepIdx > 0) { stepIdx--; render(); } };
+    document.getElementById('btnNext').onclick = () => { if (stepIdx < SCENARIOS[currentKey].length - 1) { stepIdx++; render(); } };
+    render();
+  </script>
+</body>
+</html>
