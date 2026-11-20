@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PaymentTesting | 支付发卡行测试交互式实战教程</title>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --primary: #2563eb; --primary-bg: #eff6ff;
+      --green: #059669; --green-bg: #ecfdf5;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg); color: var(--text); padding: 40px 16px 64px; line-height: 1.6;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    .hero {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 32px; margin-bottom: 28px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    }
+    .hero-tag {
+      display: inline-block; font-size: 12px; font-weight: 700; color: var(--primary);
+      background: var(--primary-bg); padding: 4px 12px; border-radius: 999px; margin-bottom: 12px;
+    }
+    .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .hero p { font-size: 15px; color: var(--muted); max-width: 720px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 22px; display: flex; flex-direction: column; justify-content: space-between;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card.ready:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07); }
+    .card.locked { opacity: 0.65; background: #f1f5f9; }
+
+    .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .mod-num { font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .status { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+    .status.done { background: var(--green-bg); color: var(--green); }
+    .status.soon { background: #e2e8f0; color: #475569; }
+
+    .card h2 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .card p { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+
+    .links { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      display: inline-block; text-decoration: none; font-size: 13px; font-weight: 600;
+      padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border);
+      color: var(--text); background: #fff; transition: all 0.15s;
+    }
+    .btn:hover { background: #f1f5f9; }
+    .btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    .btn.primary:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <span class="hero-tag">Minimal Cognitive Load · Interactive DFD</span>
+      <h1>支付发卡行测试交互式实战教程</h1>
+      <p>聚焦卡管理系统（CMS）、ISO 8583、EMV、PCI-DSS 与数字钱包集成。每个模块包含“核心心智模型 + 交互式分步数据流图 + 动手实践”。</p>
+    </div>
+
+    <div class="grid">
+      <div class="card ready">
+        <div>
+          <div class="card-top"><span class="mod-num">Module 01</span><span class="status done">已上线</span></div>
+          <h2>支付基石与 CMS 状态机</h2>
+          <p>联机授权 vs T+1 批处理清算、可用/冻结双桶账务模型、卡生命周期状态机与边界漏洞。</p>
+        </div>
+        <div class="links">
+          <a class="btn primary" href="./module-01-cms-basics/index.html">进入学习</a>
+          <a class="btn" href="./module-01-cms-basics/exercise.html">动手练习</a>
+        </div>
+      </div>
+
+      <div class="card ready">
+        <div>
+          <div class="card-top"><span class="mod-num">Module 02</span><span class="status done">已上线</span></div>
+          <h2>支付异常与资损防控</h2>
+          <p>超时 0420 冲正、乱序预冲正占位、重复冲正幂等保护，以及 T+1 清算长短款 Python 对账。</p>
+        </div>
+        <div class="links">
+          <a class="btn primary" href="./module-02-reconciliation/index.html">进入学习</a>
+          <a class="btn" href="https://github.com/zhusihan-python/PaymentTesting/blob/main/module-02-reconciliation/reconcile_exercise.py" target="_blank">Python 练习</a>
+        </div>
+      </div>
+
+      <div class="card locked">
+        <div>
+          <div class="card-top"><span class="mod-num">Module 03</span><span class="status soon">规划中</span></div>
+          <h2>ISO 8583 协议与 Mock 挡板</h2>
+          <p>MTI、Bitmap 二进制位图、核心数据元拆解，以及 Python 卡组织模拟器实战。</p>
+        </div>
+      </div>
+
+      <div class="card locked">
+        <div>
+          <div class="card-top"><span class="mod-num">Module 04</span><span class="status soon">规划中</span></div>
+          <h2>EMV 与 PCI-DSS 安全测试</h2>
+          <p>ARQC/ARPC 验签、HSM/PIN Block、CHD/SAD 合规红线与自动化日志脱敏扫描。</p>
+        </div>
+      </div>
+
+      <div class="card locked">
+        <div>
+          <div class="card-top"><span class="mod-num">Module 05</span><span class="status soon">规划中</span></div>
+          <h2>数字钱包与令牌化（Tokenization）</h2>
+          <p>Apple Pay / Google Pay 绑卡、FPAN vs DPAN、ID&amp;V 路由与主卡挂失联动。</p>
+        </div>
+      </div>
+
+      <div class="card locked">
+        <div>
+          <div class="card-top"><span class="mod-num">Module 06</span><span class="status soon">规划中</span></div>
+          <h2>端到端发卡行自动化实战</h2>
+          <p>串联协议 Mock、异常冲正、对账核验与合规扫描的迷你 Pytest 测试套件。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
