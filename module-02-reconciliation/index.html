@@ -36,26 +36,44 @@
     table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 13.5px; }
     th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
     th { background: #f1f5f9; font-weight: 700; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: #f1f5f9; padding: 2px 5px; border-radius: 4px; }
 
     .recon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
     .recon-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 13px; }
     .recon-card strong { display: block; font-size: 14px; margin-bottom: 4px; }
 
-    /* DFD Styles */
-    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 20px; }
-    .tab { padding: 7px 15px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+    /* Scenario Tabs */
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 18px; }
+    .tab { padding: 7px 15px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
     .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
 
-    .diagram { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
-    .node { background: var(--bg); border: 2px solid var(--border); border-radius: 12px; padding: 14px; text-align: center; transition: all 0.25s; }
-    .node-title { font-weight: 700; font-size: 14px; }
-    .node-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-    .node.hl-blue { border-color: var(--blue); background: var(--blue-bg); transform: translateY(-2px); }
-    .node.hl-amber { border-color: var(--amber); background: var(--amber-bg); transform: translateY(-2px); }
-    .node.hl-red { border-color: var(--red); background: var(--red-bg); transform: translateY(-2px); }
-    .node.hl-green { border-color: var(--green); background: var(--green-bg); transform: translateY(-2px); }
+    /* SVG Sequence Diagram */
+    .svg-wrap {
+      width: 100%; overflow-x: auto; background: #fbfdff;
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 8px; margin-bottom: 18px;
+    }
+    svg.seq-svg { width: 100%; min-width: 660px; height: auto; display: block; }
+    .lifeline { stroke: #cbd5e1; stroke-width: 2; stroke-dasharray: 6 5; }
+    .node-box { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; transition: all 0.25s; }
+    .node-box.hl-blue { fill: #eff6ff; stroke: #2563eb; stroke-width: 2.5; }
+    .node-box.hl-amber { fill: #fffbeb; stroke: #d97706; stroke-width: 2.5; }
+    .node-box.hl-red { fill: #fef2f2; stroke: #dc2626; stroke-width: 2.5; }
+    .node-box.hl-green { fill: #ecfdf5; stroke: #059669; stroke-width: 2.5; }
+    .node-text-main { font-size: 13.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .node-text-sub { font-size: 11px; fill: #64748b; text-anchor: middle; }
 
-    .banner { border-radius: 12px; padding: 16px 20px; margin-bottom: 18px; border-left: 5px solid var(--blue); background: var(--blue-bg); }
+    .arrow-group { transition: opacity 0.25s; cursor: pointer; }
+    .arrow-group.future { opacity: 0.22; }
+    .arrow-group.past { opacity: 0.55; }
+    .arrow-group.active { opacity: 1; }
+    .arrow-label { font-size: 12px; font-weight: 700; text-anchor: middle; }
+
+    @keyframes dashFlow { to { stroke-dashoffset: -24; } }
+    .flow-active-line { stroke-dasharray: 8 4; animation: dashFlow 0.7s linear infinite; }
+
+    /* Flow Banner */
+    .banner { border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; border-left: 5px solid var(--blue); background: var(--blue-bg); }
     .banner.amber { border-left-color: var(--amber); background: var(--amber-bg); }
     .banner.red { border-left-color: var(--red); background: var(--red-bg); }
     .banner.green { border-left-color: var(--green); background: var(--green-bg); }
@@ -68,33 +86,34 @@
     .step-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
     .step-detail { font-size: 14px; color: #334155; }
 
+    /* State Dashboard */
     .state-grid { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 12px; margin-bottom: 20px; }
     .stat-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: #fff; }
     .stat-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
     .stat-val { font-size: 20px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
-    .db-val { font-family: ui-monospace, monospace; font-size: 13px; font-weight: 600; margin-top: 6px; }
+    .db-val { font-family: ui-monospace, monospace; font-size: 13px; font-weight: 600; margin-top: 6px; color: #0f172a; }
 
     .controls { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
     .dots { display: flex; gap: 8px; }
     .dot { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
     .dot.active { background: var(--text); color: #fff; border-color: var(--text); }
     .btns { display: flex; gap: 8px; }
-    button.btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
-    button.btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
-    button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .cmd-box {
-      background: #0f172a; color: #e2e8f0; padding: 12px 16px; border-radius: 8px;
-      font-family: ui-monospace, monospace; font-size: 13px; margin-top: 12px;
+    button.btn, a.cta-btn {
+      padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; color: var(--text);
     }
-    @media (max-width: 700px) { .diagram, .state-grid { grid-template-columns: 1fr; } }
+    button.btn.primary, a.cta-btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .footer-cta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+    @media (max-width: 700px) { .state-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="topbar">
       <a href="../index.html">← 返回教程总目录</a>
-      <a href="../module-01-cms-basics/index.html">← 回顾 Module 1</a>
+      <a href="./exercise.html">直达 Python 对账练习 →</a>
     </div>
 
     <!-- Part 1: Mental Models -->
@@ -123,10 +142,10 @@
       </div>
     </div>
 
-    <!-- Part 2: Interactive DFD -->
+    <!-- Part 2: Interactive DFD with SVG Lifelines -->
     <div class="section">
       <h2>交互式分步 DFD：超时冲正（0420）、乱序与幂等防控</h2>
-      <p class="subtitle">初始余额：$500 ｜ 切换三大异常场景，观察发卡行如何防止“白扣钱”和“重复退款”</p>
+      <p class="subtitle">初始余额：$500 ｜ 切换三大异常场景，点击图上步骤或下方按钮观察生命线流向与数据库状态</p>
 
       <div class="tabs">
         <button class="tab active" onclick="selectScenario('normal', this)">场景 A：正常超时冲正</button>
@@ -134,10 +153,49 @@
         <button class="tab" onclick="selectScenario('duplicate', this)">场景 C：重复冲正（幂等）</button>
       </div>
 
-      <div class="diagram">
-        <div class="node" id="n-pos"><div class="node-title">POS / 收单行</div><div class="node-sub">发起请求与超时监控</div></div>
-        <div class="node" id="n-net"><div class="node-title">卡组织 (Visa/MC)</div><div class="node-sub">路由转发与 0420 触发</div></div>
-        <div class="node" id="n-iss"><div class="node-title">发卡行核心 (CMS)</div><div class="node-sub">账务冻结、冲正与幂等表</div></div>
+      <!-- SVG Sequence Diagram -->
+      <div class="svg-wrap">
+        <svg class="seq-svg" viewBox="0 0 880 310" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+            </marker>
+            <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706" />
+            </marker>
+            <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626" />
+            </marker>
+            <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+            </marker>
+          </defs>
+
+          <!-- Lifelines (z-order: bottom) -->
+          <g id="lifelines">
+            <line class="lifeline" x1="150" y1="68" x2="150" y2="296" />
+            <line class="lifeline" x1="440" y1="68" x2="440" y2="296" />
+            <line class="lifeline" x1="730" y1="68" x2="730" y2="296" />
+          </g>
+
+          <!-- Participant Nodes -->
+          <g id="nodes">
+            <rect id="n-pos" class="node-box" x="50" y="12" width="200" height="56" rx="10" />
+            <text class="node-text-main" x="150" y="36">POS / 收单行</text>
+            <text class="node-text-sub" x="150" y="54">发起请求与超时监控</text>
+
+            <rect id="n-net" class="node-box" x="340" y="12" width="200" height="56" rx="10" />
+            <text class="node-text-main" x="440" y="36">卡组织 (Visa/MC)</text>
+            <text class="node-text-sub" x="440" y="54">路由转发与 0420 触发</text>
+
+            <rect id="n-iss" class="node-box" x="630" y="12" width="200" height="56" rx="10" />
+            <text class="node-text-main" x="730" y="36">发卡行核心 (CMS)</text>
+            <text class="node-text-sub" x="730" y="54">账务冻结、冲正与幂等表</text>
+          </g>
+
+          <!-- Dynamic Step Arrows (z-order: top) -->
+          <g id="arrowsLayer"></g>
+        </svg>
       </div>
 
       <div class="banner" id="banner">
@@ -158,54 +216,200 @@
       <div class="controls">
         <div class="dots" id="dots"></div>
         <div class="btns">
+          <button class="btn" id="btnReset">重置</button>
           <button class="btn" id="btnPrev">上一步</button>
           <button class="btn primary" id="btnNext">下一步</button>
         </div>
       </div>
     </div>
 
-    <!-- Part 3: Python Exercise -->
-    <div class="section">
-      <h2>动手实践：Python T+1 清算自动对账脚本</h2>
-      <p class="subtitle">打开同目录下的 <code>reconcile_exercise.py</code>，使用 <code>Decimal</code> 补全双向对账逻辑并跑通全部断言：</p>
-      <div class="cmd-box">cd module-02-reconciliation &amp;&amp; python3 reconcile_exercise.py</div>
+    <!-- Part 3: Next Action -->
+    <div class="section footer-cta">
+      <div>
+        <h3 style="margin:0 0 4px;">下一步：Python T+1 清算自动对账实战（Pyodide）</h3>
+        <p class="subtitle">在浏览器内直接编写 Python 对账脚本，使用 <code>Decimal</code> 精准揪出长短款与重复清算。</p>
+      </div>
+      <a class="cta-btn primary" href="./exercise.html">进入 Python 练习 →</a>
     </div>
   </div>
 
   <script>
+    const NODE_X = { pos: 150, net: 440, iss: 730 };
+    const STEP_Y = [110, 162, 214, 266];
+    const COLORS = {
+      blue:  { stroke: '#2563eb', bg: '#eff6ff', text: '#1d4ed8' },
+      amber: { stroke: '#d97706', bg: '#fffbeb', text: '#b45309' },
+      red:   { stroke: '#dc2626', bg: '#fef2f2', text: '#b91c1c' },
+      green: { stroke: '#059669', bg: '#ecfdf5', text: '#047857' }
+    };
+
     const scenarios = {
       normal: [
-        { color: 'blue', badge: '正常授权', payload: '0100 (STAN=000123, $100)', title: '1. 发卡行收到 0100 并完成冻结', nodes: ['pos', 'net', 'iss'], detail: '用户刷卡 $100，发卡行校验通过，将 $100 从可用余额转入冻结金额，并准备返回 0110。', avail: '$400', frozen: '$100', db: 'TXN#000123: AUTHORIZED ($100)' },
-        { color: 'red', badge: '网络异常', payload: '0110 响应丢包 / 超时', title: '2. 0110 响应在公网超时丢失', nodes: ['iss', 'net'], detail: '发卡行已扣款，但响应报文在链路中丢失。卡组织/POS 等待超过阈值，判定交易超时。', avail: '$400', frozen: '$100', db: 'TXN#000123: AUTHORIZED ($100)' },
-        { color: 'amber', badge: '触发冲正', payload: '0420 (Orig STAN=000123, $100)', title: '3. 卡组织自动发起 0420 冲正报文', nodes: ['net', 'iss'], detail: '为防止用户被单边扣款，卡组织携带原交易唯一流水号向发卡行发送 0420 冲正。', avail: '$400', frozen: '$100', db: 'TXN#000123: AUTHORIZED ($100)' },
-        { color: 'green', badge: '冲正闭环', payload: '0430 (F39=00)', title: '4. 发卡行匹配原单并释放冻结额度', nodes: ['iss', 'net'], detail: '发卡行根据唯一键命中原交易，释放 $100 冻结金额，状态改为 REVERSED，返回 0430 成功。', avail: '$500', frozen: '$0', db: 'TXN#000123: REVERSED ($0)' }
+        {
+          color: 'blue', badge: '正常授权', payload: '0100 (STAN=000123, $100)',
+          title: '1. 发卡行收到 0100 并完成冻结', nodes: ['pos', 'net', 'iss'],
+          arrow: { type: 'line', from: 'pos', to: 'iss', label: '① 0100 授权请求 ($100)' },
+          detail: '用户刷卡 $100，发卡行校验通过，将 $100 从可用余额转入冻结金额，并准备返回 0110。',
+          avail: '$400', frozen: '$100', db: 'TXN#000123: AUTHORIZED ($100)'
+        },
+        {
+          color: 'red', badge: '网络异常', payload: '0110 响应丢包 / 超时',
+          title: '2. 0110 响应在公网超时丢失', nodes: ['iss', 'net'],
+          arrow: { type: 'lost', from: 'iss', to: 'net', label: '② 0110 响应丢包 ✕ 超时' },
+          detail: '发卡行已扣款，但响应报文在链路中丢失。卡组织/POS 等待超过阈值，判定交易超时。',
+          avail: '$400', frozen: '$100', db: 'TXN#000123: AUTHORIZED ($100)'
+        },
+        {
+          color: 'amber', badge: '触发冲正', payload: '0420 (Orig STAN=000123, $100)',
+          title: '3. 卡组织自动发起 0420 冲正报文', nodes: ['net', 'iss'],
+          arrow: { type: 'line', from: 'net', to: 'iss', label: '③ 0420 超时冲正 ($100)' },
+          detail: '为防止用户被单边扣款，卡组织携带原交易唯一流水号向发卡行发送 0420 冲正。',
+          avail: '$400', frozen: '$100', db: 'TXN#000123: AUTHORIZED ($100)'
+        },
+        {
+          color: 'green', badge: '冲正闭环', payload: '0430 (F39=00)',
+          title: '4. 发卡行匹配原单并释放冻结额度', nodes: ['iss', 'net'],
+          arrow: { type: 'line', from: 'iss', to: 'net', label: '④ 0430 冲正成功 (释放 $100)' },
+          detail: '发卡行根据唯一键命中原交易，释放 $100 冻结金额，状态改为 REVERSED，返回 0430 成功。',
+          avail: '$500', frozen: '$0', db: 'TXN#000123: REVERSED ($0)'
+        }
       ],
       outOfOrder: [
-        { color: 'amber', badge: '网络乱序', payload: '0420 先到达 (STAN=000456)', title: '1. 0420 冲正比原 0100 更早到达发卡行', nodes: ['net', 'iss'], detail: '原 0100 在路由节点拥堵延迟；上游超时触发的 0420 率先到达发卡行，此时 DB 查不到原交易。', avail: '$500', frozen: '$0', db: '查询 TXN#000456 → 不存在' },
-        { color: 'blue', badge: '防乱序机制', payload: '写入 PRE_REVERSED 占位记录', title: '2. 发卡行不可丢弃，必须落库“预冲正”', nodes: ['iss'], detail: '发卡行在流水表插入一条 TXN#000456 (PRE_REVERSED) 占位记录，并返回 0430 成功。', avail: '$500', frozen: '$0', db: 'TXN#000456: PRE_REVERSED (占位)' },
-        { color: 'red', badge: '迟到报文', payload: '迟到的 0100 到达 (STAN=000456)', title: '3. 延迟的 0100 授权请求终于到达', nodes: ['net', 'iss'], detail: '1 秒后，原本拥堵的 0100 报文到达发卡行。若未做占位，此时就会错误扣款 $100！', avail: '$500', frozen: '$0', db: '命中唯一键: PRE_REVERSED' },
-        { color: 'green', badge: '成功拦截', payload: '0110 (F39=05 / 拒绝)', title: '4. 命中预冲正标记，直接拦截拒绝扣款', nodes: ['iss', 'net'], detail: '发卡行发现该流水号已处于 PRE_REVERSED 状态，直接拒绝冻结额度，完美避免用户被白扣钱。', avail: '$500', frozen: '$0', db: 'TXN#000456: REVERSED (已拦截)' }
+        {
+          color: 'amber', badge: '网络乱序', payload: '0420 先到达 (STAN=000456)',
+          title: '1. 0420 冲正比原 0100 更早到达发卡行', nodes: ['net', 'iss'],
+          arrow: { type: 'line', from: 'net', to: 'iss', label: '① 0420 率先到达 (查无原单)' },
+          detail: '原 0100 在路由节点拥堵延迟；上游超时触发的 0420 率先到达发卡行，此时 DB 查不到原交易。',
+          avail: '$500', frozen: '$0', db: '查询 TXN#000456 → 不存在'
+        },
+        {
+          color: 'blue', badge: '防乱序机制', payload: '写入 PRE_REVERSED 占位记录',
+          title: '2. 发卡行不可丢弃，必须落库“预冲正”', nodes: ['iss'],
+          arrow: { type: 'self', node: 'iss', label: '② 写入 PRE_REVERSED 占位' },
+          detail: '发卡行在流水表插入一条 TXN#000456 (PRE_REVERSED) 占位记录，并返回 0430 成功。',
+          avail: '$500', frozen: '$0', db: 'TXN#000456: PRE_REVERSED (占位)'
+        },
+        {
+          color: 'red', badge: '迟到报文', payload: '迟到的 0100 到达 (STAN=000456)',
+          title: '3. 延迟的 0100 授权请求终于到达', nodes: ['net', 'iss'],
+          arrow: { type: 'line', from: 'net', to: 'iss', label: '③ 迟到的 0100 终于到达' },
+          detail: '1 秒后，原本拥堵的 0100 报文到达发卡行。若未做占位，此时就会错误扣款 $100！',
+          avail: '$500', frozen: '$0', db: '命中唯一键: PRE_REVERSED'
+        },
+        {
+          color: 'green', badge: '成功拦截', payload: '0110 (F39=05 / 拒绝)',
+          title: '4. 命中预冲正标记，直接拦截拒绝扣款', nodes: ['iss', 'net'],
+          arrow: { type: 'line', from: 'iss', to: 'net', label: '④ 命中占位，拦截拒绝 (F39=05)' },
+          detail: '发卡行发现该流水号已处于 PRE_REVERSED 状态，直接拒绝冻结额度，完美避免用户被白扣钱。',
+          avail: '$500', frozen: '$0', db: 'TXN#000456: REVERSED (已拦截)'
+        }
       ],
       duplicate: [
-        { color: 'blue', badge: '初始状态', payload: 'TXN#000789 已冻结 $100', title: '1. 原消费交易已成功冻结 $100', nodes: ['iss'], detail: '账户当前可用 $400、冻结 $100，准备接收冲正报文。', avail: '$400', frozen: '$100', db: 'TXN#000789: AUTHORIZED ($100)' },
-        { color: 'green', badge: '首次冲正', payload: '第 1 次 0420 (STAN=000789)', title: '2. 收到第 1 条 0420，正常解冻 $100', nodes: ['net', 'iss'], detail: '发卡行释放 $100 冻结金额，余额恢复 $500，流水状态更新为 REVERSED。假设 0430 再次丢包。', avail: '$500', frozen: '$0', db: 'TXN#000789: REVERSED ($0)' },
-        { color: 'amber', badge: '上游重试', payload: '第 2 次 0420 (完全相同的报文)', title: '3. 卡组织重发第 2 条相同 0420', nodes: ['net', 'iss'], detail: '卡组织按协议重发相同 0420。若未做幂等校验，发卡行会再次 +$100（余额变 $600 资损）！', avail: '$500', frozen: '$0', db: '校验状态：已是 REVERSED' },
-        { color: 'green', badge: '幂等保护', payload: '0430 (F39=00, 不重复动账)', title: '4. 幂等命中：直接返回成功，绝不重复退钱', nodes: ['iss', 'net'], detail: '发卡行识别该交易已冲正，跳过回滚逻辑，直接返回 0430 告知上游停止重试。余额稳稳保持 $500。', avail: '$500', frozen: '$0', db: 'TXN#000789: REVERSED (幂等拦截)' }
+        {
+          color: 'blue', badge: '初始状态', payload: 'TXN#000789 已冻结 $100',
+          title: '1. 原消费交易已成功冻结 $100', nodes: ['iss'],
+          arrow: { type: 'self', node: 'iss', label: '① 原交易已冻结 $100' },
+          detail: '账户当前可用 $400、冻结 $100，准备接收冲正报文。',
+          avail: '$400', frozen: '$100', db: 'TXN#000789: AUTHORIZED ($100)'
+        },
+        {
+          color: 'green', badge: '首次冲正', payload: '第 1 次 0420 (STAN=000789)',
+          title: '2. 收到第 1 条 0420，正常解冻 $100', nodes: ['net', 'iss'],
+          arrow: { type: 'line', from: 'net', to: 'iss', label: '② 第 1 次 0420 (解冻 $100)' },
+          detail: '发卡行释放 $100 冻结金额，余额恢复 $500，流水状态更新为 REVERSED。假设 0430 响应丢包。',
+          avail: '$500', frozen: '$0', db: 'TXN#000789: REVERSED ($0)'
+        },
+        {
+          color: 'amber', badge: '上游重试', payload: '第 2 次 0420 (完全相同的报文)',
+          title: '3. 卡组织重发第 2 条相同 0420', nodes: ['net', 'iss'],
+          arrow: { type: 'line', from: 'net', to: 'iss', label: '③ 重试第 2 次相同 0420' },
+          detail: '卡组织按协议重发相同 0420。若未做幂等校验，发卡行会再次 +$100（余额变 $600 资损）！',
+          avail: '$500', frozen: '$0', db: '校验状态：已是 REVERSED'
+        },
+        {
+          color: 'green', badge: '幂等保护', payload: '0430 (F39=00, 不重复动账)',
+          title: '4. 幂等命中：直接返回成功，绝不重复退钱', nodes: ['iss', 'net'],
+          arrow: { type: 'line', from: 'iss', to: 'net', label: '④ 0430 幂等返回 (不动账)' },
+          detail: '发卡行识别该交易已冲正，跳过回滚逻辑，直接返回 0430 告知上游停止重试。余额稳稳保持 $500。',
+          avail: '$500', frozen: '$0', db: 'TXN#000789: REVERSED (幂等拦截)'
+        }
       ]
     };
 
     let currentKey = 'normal', stepIdx = 0;
+
+    function goStep(i) { stepIdx = i; render(); }
+
     function selectScenario(key, btn) {
       currentKey = key; stepIdx = 0;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
       render();
     }
+
+    function renderArrows(list) {
+      const layer = document.getElementById('arrowsLayer');
+      let svgHtml = '';
+
+      list.forEach((s, i) => {
+        const y = STEP_Y[i];
+        const c = COLORS[s.color];
+        const stateCls = i === stepIdx ? 'active' : (i < stepIdx ? 'past' : 'future');
+        const animCls = i === stepIdx ? ' flow-active-line' : '';
+        const a = s.arrow;
+
+        svgHtml += `<g class="arrow-group ${stateCls}" onclick="goStep(${i})">`;
+        if (a.type === 'line') {
+          const x1 = NODE_X[a.from];
+          const x2 = NODE_X[a.to] + (NODE_X[a.to] > x1 ? -8 : 8);
+          const midX = (NODE_X[a.from] + NODE_X[a.to]) / 2;
+          const boxW = Math.max(185, a.label.length * 10.5);
+          svgHtml += `
+            <line class="${animCls}" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"
+                  stroke="${c.stroke}" stroke-width="2.5" marker-end="url(#arrow-${s.color})" />
+            <rect x="${midX - boxW / 2}" y="${y - 22}" width="${boxW}" height="20" rx="4" fill="${c.bg}" />
+            <text class="arrow-label" x="${midX}" y="${y - 8}" fill="${c.text}">${a.label}</text>
+          `;
+        } else if (a.type === 'lost') {
+          const x1 = NODE_X[a.from];
+          const midStop = (NODE_X[a.from] + NODE_X[a.to]) / 2 + 12;
+          const midX = (x1 + midStop) / 2;
+          const boxW = 190;
+          svgHtml += `
+            <line class="${animCls}" x1="${x1}" y1="${y}" x2="${midStop}" y2="${y}"
+                  stroke="${c.stroke}" stroke-width="2.5" />
+            <circle cx="${midStop}" cy="${y}" r="9" fill="#fef2f2" stroke="#dc2626" stroke-width="2" />
+            <text x="${midStop}" y="${y + 4}" font-size="11" font-weight="800" fill="#dc2626" text-anchor="middle">✕</text>
+            <rect x="${midX - boxW / 2 + 10}" y="${y - 22}" width="${boxW}" height="20" rx="4" fill="${c.bg}" />
+            <text class="arrow-label" x="${midX + 10}" y="${y - 8}" fill="${c.text}">${a.label}</text>
+          `;
+        } else if (a.type === 'self') {
+          const nx = NODE_X[a.node];
+          const boxW = 195;
+          svgHtml += `
+            <path class="${animCls}" d="M ${nx} ${y - 12} C ${nx + 72} ${y - 12}, ${nx + 72} ${y + 14}, ${nx + 8} ${y + 14}"
+                  fill="none" stroke="${c.stroke}" stroke-width="2.5" marker-end="url(#arrow-${s.color})" />
+            <rect x="${nx - boxW - 14}" y="${y - 10}" width="${boxW}" height="22" rx="4" fill="${c.bg}" />
+            <text class="arrow-label" x="${nx - boxW / 2 - 14}" y="${y + 5}" fill="${c.text}">${a.label}</text>
+          `;
+        }
+        svgHtml += `</g>`;
+      });
+
+      layer.innerHTML = svgHtml;
+    }
+
     function render() {
       const list = scenarios[currentKey], s = list[stepIdx];
+
+      // Update SVG participant nodes
       ['pos', 'net', 'iss'].forEach(id => {
-        document.getElementById('n-' + id).className = 'node' + (s.nodes.includes(id) ? ' hl-' + s.color : '');
+        const el = document.getElementById('n-' + id);
+        el.setAttribute('class', 'node-box' + (s.nodes.includes(id) ? ' hl-' + s.color : ''));
       });
+
+      renderArrows(list);
+
       document.getElementById('banner').className = 'banner ' + s.color;
       document.getElementById('badge').textContent = s.badge;
       document.getElementById('payload').textContent = s.payload;
@@ -221,14 +425,17 @@
         const d = document.createElement('button');
         d.className = 'dot' + (i === stepIdx ? ' active' : '');
         d.textContent = i + 1;
-        d.onclick = () => { stepIdx = i; render(); };
+        d.onclick = () => goStep(i);
         dots.appendChild(d);
       });
+
       document.getElementById('btnPrev').disabled = stepIdx === 0;
       document.getElementById('btnNext').disabled = stepIdx === list.length - 1;
     }
+
     document.getElementById('btnPrev').onclick = () => { if (stepIdx > 0) { stepIdx--; render(); } };
     document.getElementById('btnNext').onclick = () => { if (stepIdx < scenarios[currentKey].length - 1) { stepIdx++; render(); } };
+    document.getElementById('btnReset').onclick = () => { stepIdx = 0; render(); };
     render();
   </script>
 </body>
