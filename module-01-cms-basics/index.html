@@ -10,7 +10,8 @@
       --text: #0f172a; --muted: #64748b;
       --auth: #2563eb; --auth-bg: #eff6ff;
       --clear: #7c3aed; --clear-bg: #f5f3ff;
-      --success: #059669; --warn: #d97706;
+      --success: #059669; --success-bg: #ecfdf5;
+      --warn: #d97706; --warn-bg: #fffbeb;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -52,27 +53,46 @@
     /* DFD Styles */
     .dfd-header {
       display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
-      gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+      gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 18px;
     }
     .toggle-wrap {
-      display: flex; align-items: center; gap: 8px; background: #fffbeb;
+      display: flex; align-items: center; gap: 8px; background: var(--warn-bg);
       border: 1px solid #fde68a; padding: 7px 14px; border-radius: 999px;
       font-size: 13px; font-weight: 600; color: #92400e; cursor: pointer; user-select: none;
     }
     .toggle-wrap input { accent-color: var(--warn); width: 16px; height: 16px; }
 
-    .diagram { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-    .node {
-      background: var(--bg); border: 2px solid var(--border); border-radius: 12px;
-      padding: 14px 10px; text-align: center; transition: all 0.25s;
+    /* SVG Sequence Diagram Container */
+    .svg-wrap {
+      width: 100%; overflow-x: auto; background: #fbfdff;
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 8px; margin-bottom: 18px;
     }
-    .node-title { font-weight: 700; font-size: 14px; }
-    .node-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-    .node.active-auth { border-color: var(--auth); background: var(--auth-bg); transform: translateY(-2px); }
-    .node.active-clear { border-color: var(--clear); background: var(--clear-bg); transform: translateY(-2px); }
+    svg.seq-svg { width: 100%; min-width: 680px; height: auto; display: block; }
+    .lifeline { stroke: #cbd5e1; stroke-width: 2; stroke-dasharray: 6 5; }
+    .node-box { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; transition: all 0.25s; }
+    .node-box.active-auth { fill: #eff6ff; stroke: #2563eb; stroke-width: 2.5; }
+    .node-box.active-clear { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 2.5; }
+    .node-text-main { font-size: 13.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .node-text-sub { font-size: 11px; fill: #64748b; text-anchor: middle; }
 
+    .arrow-group { transition: opacity 0.25s; cursor: pointer; }
+    .arrow-group.future { opacity: 0.22; }
+    .arrow-group.past { opacity: 0.55; }
+    .arrow-group.active { opacity: 1; }
+    .arrow-label { font-size: 12px; font-weight: 700; text-anchor: middle; }
+
+    @keyframes dashFlow {
+      to { stroke-dashoffset: -24; }
+    }
+    .flow-active-line {
+      stroke-dasharray: 8 4;
+      animation: dashFlow 0.7s linear infinite;
+    }
+
+    /* Flow Banner */
     .flow-banner {
-      border-radius: 12px; padding: 16px 20px; margin-bottom: 18px;
+      border-radius: 12px; padding: 16px 20px; margin-bottom: 14px;
       border-left: 5px solid var(--auth); background: var(--auth-bg);
     }
     .flow-banner.phase-clear { border-left-color: var(--clear); background: var(--clear-bg); }
@@ -84,11 +104,34 @@
     .flow-detail { font-size: 14px; color: #334155; }
     .flow-route { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
 
+    /* Status Strip */
+    .status-strip {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px;
+    }
+    .status-pill {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;
+    }
+    .status-pill-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .status-pill-val { font-size: 13.5px; font-weight: 700; color: var(--text); }
+    .status-pill-val.hl-auth { color: var(--auth); }
+    .status-pill-val.hl-clear { color: var(--clear); }
+    .status-pill-val.hl-success { color: var(--success); }
+
+    /* Ledger Panel */
+    .ledger-title {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;
+    }
     .ledger { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
     .ledger-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: #fff; transition: all 0.25s; }
-    .ledger-card.changed { border-color: var(--success); background: #ecfdf5; }
+    .ledger-card.changed { border-color: var(--success); background: var(--success-bg); }
+    .ledger-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
     .ledger-label { font-size: 12px; color: var(--muted); }
-    .ledger-value { font-size: 22px; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .ledger-delta { font-size: 11.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; display: none; }
+    .ledger-delta.show { display: inline-block; background: #d1fae5; color: #065f46; }
+    .ledger-delta.neg { background: #fee2e2; color: #991b1b; }
+    .ledger-value { font-size: 22px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
 
     .controls { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
     .step-dots { display: flex; gap: 8px; }
@@ -103,7 +146,7 @@
     button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .footer-cta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-    @media (max-width: 700px) { .diagram { grid-template-columns: repeat(2, 1fr); } .ledger { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) { .ledger, .status-strip { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -144,12 +187,12 @@
       </div>
     </div>
 
-    <!-- Part 2: Interactive DFD -->
+    <!-- Part 2: Interactive DFD with SVG Lifelines -->
     <div class="section">
       <div class="dfd-header">
         <div>
           <h2 style="margin-bottom:2px;">交互式分步 DFD：授权与清算双链路</h2>
-          <p class="subtitle">初始账户余额：$500 ｜ 点击下一步观察报文流向与发卡行账务变化</p>
+          <p class="subtitle">初始账户余额：$500 ｜ 点击图上步骤或下方按钮，观察生命线流向与账务变化</p>
         </div>
         <label class="toggle-wrap">
           <input type="checkbox" id="diffToggle" />
@@ -157,11 +200,88 @@
         </label>
       </div>
 
-      <div class="diagram">
-        <div class="node" id="node-merchant"><div class="node-title">商户 / POS</div><div class="node-sub">发起消费与日终批结</div></div>
-        <div class="node" id="node-acquirer"><div class="node-title">收单行</div><div class="node-sub">转发授权与汇总清算</div></div>
-        <div class="node" id="node-network"><div class="node-title">卡组织 Visa/MC</div><div class="node-sub">联机路由与清分中心</div></div>
-        <div class="node" id="node-issuer"><div class="node-title">发卡行 CMS/账务</div><div class="node-sub">校验状态、冻结与核销</div></div>
+      <!-- SVG Sequence Diagram -->
+      <div class="svg-wrap">
+        <svg class="seq-svg" viewBox="0 0 880 355" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow-auth" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+            </marker>
+            <marker id="arrow-clear" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#7c3aed" />
+            </marker>
+          </defs>
+
+          <!-- Lifelines (z-order: bottom) -->
+          <g id="lifelines">
+            <line class="lifeline" x1="110" y1="68" x2="110" y2="340" />
+            <line class="lifeline" x1="330" y1="68" x2="330" y2="340" />
+            <line class="lifeline" x1="550" y1="68" x2="550" y2="340" />
+            <line class="lifeline" x1="770" y1="68" x2="770" y2="340" />
+          </g>
+
+          <!-- Phase Divider -->
+          <line x1="20" y1="186" x2="860" y2="186" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4 4" />
+          <text x="30" y="180" font-size="11" font-weight="700" fill="#2563eb">阶段一：实时联机授权（秒级）</text>
+          <text x="30" y="202" font-size="11" font-weight="700" fill="#7c3aed">阶段二：T+1 批处理清算（隔日凌晨）</text>
+
+          <!-- Participant Nodes -->
+          <g id="nodes">
+            <rect id="node-merchant" class="node-box" x="25" y="12" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="110" y="36">商户 / POS</text>
+            <text class="node-text-sub" x="110" y="54">发起消费与日终批结</text>
+
+            <rect id="node-acquirer" class="node-box" x="245" y="12" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="330" y="36">收单行</text>
+            <text class="node-text-sub" x="330" y="54">转发授权与汇总清算</text>
+
+            <rect id="node-network" class="node-box" x="465" y="12" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="550" y="36">卡组织 Visa/MC</text>
+            <text class="node-text-sub" x="550" y="54">联机路由与清分中心</text>
+
+            <rect id="node-issuer" class="node-box" x="685" y="12" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="770" y="36">发卡行 CMS/账务</text>
+            <text class="node-text-sub" x="770" y="54">校验状态、冻结与核销</text>
+          </g>
+
+          <!-- Step Arrows (z-order: top) -->
+          <g id="arrows">
+            <!-- Step 1: merchant -> issuer -->
+            <g class="arrow-group" id="arr-0" onclick="goStep(0)">
+              <line id="line-0" x1="110" y1="108" x2="762" y2="108" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-auth)" />
+              <rect x="335" y="88" width="210" height="20" rx="4" fill="#eff6ff" />
+              <text class="arrow-label" x="440" y="102" fill="#1d4ed8">① 0100 授权请求 ($100)</text>
+            </g>
+
+            <!-- Step 2: issuer -> merchant -->
+            <g class="arrow-group" id="arr-1" onclick="goStep(1)">
+              <line id="line-1" x1="770" y1="154" x2="118" y2="154" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-auth)" />
+              <rect x="320" y="134" width="240" height="20" rx="4" fill="#eff6ff" />
+              <text class="arrow-label" x="440" y="148" fill="#1d4ed8">② 0110 授权通过 (F39=00 · 冻结 $100)</text>
+            </g>
+
+            <!-- Step 3: merchant -> acquirer -->
+            <g class="arrow-group" id="arr-2" onclick="goStep(2)">
+              <line id="line-2" x1="110" y1="234" x2="322" y2="234" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#arrow-clear)" />
+              <rect x="135" y="214" width="170" height="20" rx="4" fill="#f5f3ff" />
+              <text class="arrow-label" id="lbl-step3" x="220" y="228" fill="#6d28d9">③ 日终批结请款 ($100)</text>
+            </g>
+
+            <!-- Step 4: acquirer -> issuer -->
+            <g class="arrow-group" id="arr-3" onclick="goStep(3)">
+              <line id="line-3" x1="330" y1="278" x2="762" y2="278" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#arrow-clear)" />
+              <rect x="435" y="258" width="230" height="20" rx="4" fill="#f5f3ff" />
+              <text class="arrow-label" id="lbl-step4" x="550" y="272" fill="#6d28d9">④ BASE II / IPM 清算文件 ($100)</text>
+            </g>
+
+            <!-- Step 5: issuer self-loop -->
+            <g class="arrow-group" id="arr-4" onclick="goStep(4)">
+              <path id="line-4" d="M 770 306 C 835 306, 835 334, 778 334" fill="none" stroke="#7c3aed" stroke-width="2.5" marker-end="url(#arrow-clear)" />
+              <rect x="575" y="310" width="185" height="22" rx="4" fill="#f5f3ff" />
+              <text class="arrow-label" id="lbl-step5" x="667" y="325" fill="#6d28d9">⑤ 解冻并实扣核销 ($100)</text>
+            </g>
+          </g>
+        </svg>
       </div>
 
       <div class="flow-banner" id="flowBanner">
@@ -174,10 +294,36 @@
         <div class="flow-route" id="stepRoute"></div>
       </div>
 
+      <!-- Status Strip under Flow Detail -->
+      <div class="status-strip">
+        <div class="status-pill">
+          <span class="status-pill-label">当前交易状态 (TXN Status)</span>
+          <span class="status-pill-val" id="st-txn"></span>
+        </div>
+        <div class="status-pill">
+          <span class="status-pill-label">卡片状态 (Card Status)</span>
+          <span class="status-pill-val hl-success" id="st-card">Active（正常）</span>
+        </div>
+        <div class="status-pill">
+          <span class="status-pill-label">本步资金动作 (Ledger Action)</span>
+          <span class="status-pill-val" id="st-action"></span>
+        </div>
+      </div>
+
+      <div class="ledger-title">发卡行实时账务状态（Ledger）</div>
       <div class="ledger">
-        <div class="ledger-card" id="card-avail"><div class="ledger-label">可用余额 (Available)</div><div class="ledger-value" id="val-avail">$500</div></div>
-        <div class="ledger-card" id="card-frozen"><div class="ledger-label">冻结金额 (Frozen)</div><div class="ledger-value" id="val-frozen">$0</div></div>
-        <div class="ledger-card" id="card-cleared"><div class="ledger-label">已清算扣款 (Cleared)</div><div class="ledger-value" id="val-cleared">$0</div></div>
+        <div class="ledger-card" id="card-avail">
+          <div class="ledger-top"><span class="ledger-label">可用余额 (Available)</span><span class="ledger-delta" id="delta-avail"></span></div>
+          <div class="ledger-value" id="val-avail">$500</div>
+        </div>
+        <div class="ledger-card" id="card-frozen">
+          <div class="ledger-top"><span class="ledger-label">冻结金额 (Frozen)</span><span class="ledger-delta" id="delta-frozen"></span></div>
+          <div class="ledger-value" id="val-frozen">$0</div>
+        </div>
+        <div class="ledger-card" id="card-cleared">
+          <div class="ledger-top"><span class="ledger-label">已清算扣款 (Cleared)</span><span class="ledger-delta" id="delta-cleared"></span></div>
+          <div class="ledger-value" id="val-cleared">$0</div>
+        </div>
       </div>
 
       <div class="controls">
@@ -206,58 +352,100 @@
         phase: 'auth', phaseLabel: '阶段一：实时联机授权', payload: 'ISO 8583 0100 ($100)',
         title: '1. 发起联机授权请求', route: '流向：商户 / POS → 收单行 → 卡组织 → 发卡行',
         nodes: ['merchant', 'acquirer', 'network', 'issuer'],
+        txnStatus: 'INIT（授权发起中）',
+        actionNormal: '无动账（等待发卡行校验）', actionDiff: '无动账（等待发卡行校验）',
         detailNormal: '用户刷卡消费 $100，收单行经卡组织向发卡行实时发送 0100 授权请求报文。',
         detailDiff: '用户刷卡消费 $100，收单行经卡组织向发卡行实时发送 0100 授权请求报文。',
-        ledgerNormal: { avail: 500, frozen: 0, cleared: 0 }, ledgerDiff: { avail: 500, frozen: 0, cleared: 0 }
+        ledgerNormal: { avail: 500, frozen: 0, cleared: 0 }, ledgerDiff: { avail: 500, frozen: 0, cleared: 0 },
+        deltaNormal: { avail: '', frozen: '', cleared: '' }, deltaDiff: { avail: '', frozen: '', cleared: '' }
       },
       {
         phase: 'auth', phaseLabel: '阶段一：实时联机授权', payload: 'ISO 8583 0110 (F39=00)',
         title: '2. 校验卡状态并冻结额度', route: '流向：发卡行 → 卡组织 → 收单行 → 商户 / POS',
         nodes: ['issuer', 'network', 'merchant'],
+        txnStatus: 'AUTHORIZED（已授权 / Pending）',
+        actionNormal: '冻结 $100（可用 → 冻结）', actionDiff: '冻结 $100（可用 → 冻结）',
         detailNormal: '发卡行确认卡状态为 Active 且余额充足，冻结 $100 并返回授权通过。此时资金尚未真实划拨。',
         detailDiff: '发卡行确认卡状态为 Active 且余额充足，冻结 $100 并返回授权通过。此时资金尚未真实划拨。',
-        ledgerNormal: { avail: 400, frozen: 100, cleared: 0 }, ledgerDiff: { avail: 400, frozen: 100, cleared: 0 }
+        ledgerNormal: { avail: 400, frozen: 100, cleared: 0 }, ledgerDiff: { avail: 400, frozen: 100, cleared: 0 },
+        deltaNormal: { avail: '-$100', frozen: '+$100', cleared: '' }, deltaDiff: { avail: '-$100', frozen: '+$100', cleared: '' }
       },
       {
         phase: 'clear', phaseLabel: '阶段二：T+1 批处理清算', payload: '日终批次请款文件',
         title: '3. 商户日终批结请款', route: '流向：商户 / POS → 收单行',
         nodes: ['merchant', 'acquirer'],
+        txnStatus: 'PRESENTING（商户请款中）',
+        actionNormal: '无动账（资金仍在冻结池）', actionDiff: '无动账（请款金额已变为 $105）',
         detailNormal: '次日凌晨，商户将当日已授权交易打包发送给收单行请款（金额 $100）。',
         detailDiff: '次日凌晨，商户批结请款。因餐厅追加 $5 小费（或外币汇率波动），请款总额变为 $105。',
-        ledgerNormal: { avail: 400, frozen: 100, cleared: 0 }, ledgerDiff: { avail: 400, frozen: 100, cleared: 0 }
+        ledgerNormal: { avail: 400, frozen: 100, cleared: 0 }, ledgerDiff: { avail: 400, frozen: 100, cleared: 0 },
+        deltaNormal: { avail: '', frozen: '', cleared: '' }, deltaDiff: { avail: '', frozen: '', cleared: '' }
       },
       {
         phase: 'clear', phaseLabel: '阶段二：T+1 批处理清算', payload: 'Visa BASE II / MC IPM',
         title: '4. 卡组织清分并下发清算文件', route: '流向：收单行 → 卡组织 → 发卡行',
         nodes: ['acquirer', 'network', 'issuer'],
+        txnStatus: 'CLEARING（卡组织清分中）',
+        actionNormal: '无动账（等待发卡行批处理）', actionDiff: '无动账（等待发卡行核销 $105）',
         detailNormal: '卡组织汇总全球收单行数据，按发卡行拆分后下发标准批处理清算文件。',
         detailDiff: '卡组织汇总全球收单行数据，按发卡行拆分后下发包含 $105 实扣金额的清算文件。',
-        ledgerNormal: { avail: 400, frozen: 100, cleared: 0 }, ledgerDiff: { avail: 400, frozen: 100, cleared: 0 }
+        ledgerNormal: { avail: 400, frozen: 100, cleared: 0 }, ledgerDiff: { avail: 400, frozen: 100, cleared: 0 },
+        deltaNormal: { avail: '', frozen: '', cleared: '' }, deltaDiff: { avail: '', frozen: '', cleared: '' }
       },
       {
         phase: 'clear', phaseLabel: '阶段二：T+1 批处理清算', payload: '发卡行账务批处理核销',
         title: '5. 发卡行解冻并实扣核销', route: '流向：发卡行内部账务系统',
         nodes: ['issuer'],
+        txnStatus: 'CLEARED（已清算核销）',
+        actionNormal: '释放冻结 $100 → 实扣 $100', actionDiff: '释放冻结 $100 + 补扣可用 $5',
         detailNormal: '发卡行匹配原授权记录，释放 $100 冻结金额并完成真实扣款，交易闭环。',
         detailDiff: '发卡行释放原 $100 冻结金额，并额外从可用余额补扣 $5 差额，总计实扣 $105。',
-        ledgerNormal: { avail: 400, frozen: 0, cleared: 100 }, ledgerDiff: { avail: 395, frozen: 0, cleared: 105 }
+        ledgerNormal: { avail: 400, frozen: 0, cleared: 100 }, ledgerDiff: { avail: 395, frozen: 0, cleared: 105 },
+        deltaNormal: { avail: '', frozen: '-$100', cleared: '+$100' }, deltaDiff: { avail: '-$5 差额', frozen: '-$100', cleared: '+$105' }
       }
     ];
 
     let currentStep = 0;
-    let prevLedger = { avail: 500, frozen: 0, cleared: 0 };
     const diffToggle = document.getElementById('diffToggle');
+
+    function goStep(idx) {
+      currentStep = idx;
+      render();
+    }
 
     function render() {
       const s = steps[currentStep];
       const isDiff = diffToggle.checked;
       const ledger = isDiff ? s.ledgerDiff : s.ledgerNormal;
+      const delta = isDiff ? s.deltaDiff : s.deltaNormal;
 
+      // Update SVG participant nodes
       ['merchant', 'acquirer', 'network', 'issuer'].forEach(id => {
         const el = document.getElementById('node-' + id);
-        el.className = 'node' + (s.nodes.includes(id) ? (s.phase === 'auth' ? ' active-auth' : ' active-clear') : '');
+        el.setAttribute('class', 'node-box' + (s.nodes.includes(id) ? (s.phase === 'auth' ? ' active-auth' : ' active-clear') : ''));
       });
 
+      // Update SVG step arrows & dynamic labels
+      document.getElementById('lbl-step3').textContent = isDiff ? '③ 日终批结请款 ($105)' : '③ 日终批结请款 ($100)';
+      document.getElementById('lbl-step4').textContent = isDiff ? '④ BASE II / IPM 清算文件 ($105)' : '④ BASE II / IPM 清算文件 ($100)';
+      document.getElementById('lbl-step5').textContent = isDiff ? '⑤ 解冻 $100 + 补扣 $5' : '⑤ 解冻并实扣核销 ($100)';
+
+      steps.forEach((_, i) => {
+        const grp = document.getElementById('arr-' + i);
+        const line = document.getElementById('line-' + i);
+        if (i === currentStep) {
+          grp.setAttribute('class', 'arrow-group active');
+          line.classList.add('flow-active-line');
+        } else if (i < currentStep) {
+          grp.setAttribute('class', 'arrow-group past');
+          line.classList.remove('flow-active-line');
+        } else {
+          grp.setAttribute('class', 'arrow-group future');
+          line.classList.remove('flow-active-line');
+        }
+      });
+
+      // Update banner
       const banner = document.getElementById('flowBanner');
       banner.className = 'flow-banner' + (s.phase === 'clear' ? ' phase-clear' : '');
       document.getElementById('phaseBadge').textContent = s.phaseLabel;
@@ -266,11 +454,21 @@
       document.getElementById('stepDetail').textContent = isDiff ? s.detailDiff : s.detailNormal;
       document.getElementById('stepRoute').textContent = s.route;
 
+      // Update status strip
+      const stTxn = document.getElementById('st-txn');
+      stTxn.textContent = s.txnStatus;
+      stTxn.className = 'status-pill-val ' + (s.phase === 'auth' ? 'hl-auth' : 'hl-clear');
+      document.getElementById('st-action').textContent = isDiff ? s.actionDiff : s.actionNormal;
+
+      // Update ledger & delta badges
       ['avail', 'frozen', 'cleared'].forEach(key => {
         document.getElementById('val-' + key).textContent = '$' + ledger[key];
-        document.getElementById('card-' + key).classList.toggle('changed', ledger[key] !== prevLedger[key]);
+        const dEl = document.getElementById('delta-' + key);
+        const hasDelta = Boolean(delta[key]);
+        dEl.textContent = delta[key];
+        dEl.className = 'ledger-delta' + (hasDelta ? ' show' + (delta[key].startsWith('-') ? ' neg' : '') : '');
+        document.getElementById('card-' + key).classList.toggle('changed', hasDelta);
       });
-      prevLedger = { ...ledger };
 
       const dots = document.getElementById('stepDots');
       dots.innerHTML = '';
@@ -278,7 +476,7 @@
         const btn = document.createElement('button');
         btn.className = 'dot' + (idx === currentStep ? ' active' : '');
         btn.textContent = idx + 1;
-        btn.onclick = () => { currentStep = idx; render(); };
+        btn.onclick = () => goStep(idx);
         dots.appendChild(btn);
       });
 
@@ -288,7 +486,7 @@
 
     document.getElementById('btnPrev').onclick = () => { if (currentStep > 0) { currentStep--; render(); } };
     document.getElementById('btnNext').onclick = () => { if (currentStep < steps.length - 1) { currentStep++; render(); } };
-    document.getElementById('btnReset').onclick = () => { currentStep = 0; prevLedger = { avail: 500, frozen: 0, cleared: 0 }; render(); };
+    document.getElementById('btnReset').onclick = () => { currentStep = 0; render(); };
     diffToggle.onchange = render;
     render();
   </script>
