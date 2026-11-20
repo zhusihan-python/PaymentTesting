@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 4 实战练习 | Python PCI-DSS 日志合规扫描器</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --primary: #2563eb; --primary-bg: #eff6ff;
+      --green: #059669; --green-bg: #ecfdf5;
+      --red: #dc2626; --red-bg: #fef2f2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg); color: var(--text); padding: 24px 16px 60px; line-height: 1.6;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; }
+    .topbar a { text-decoration: none; color: var(--muted); font-weight: 600; }
+    .topbar a:hover { color: var(--text); }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: var(--muted); }
+
+    .status-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin: 16px 0 12px; }
+    .py-status { font-size: 12.5px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: var(--primary-bg); color: var(--primary); }
+    .py-status.ready { background: var(--green-bg); color: var(--green); }
+
+    textarea.code-editor {
+      width: 100%; min-height: 450px; padding: 16px; border-radius: 12px;
+      border: 1px solid #334155; background: #0f172a; color: #e2e8f0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13.5px; line-height: 1.6; resize: vertical; tab-size: 4; outline: none;
+    }
+    textarea.code-editor:focus { border-color: var(--primary); }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    button.btn { padding: 9px 18px; border-radius: 8px; border: 1px solid var(--border); background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+    button.btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    button.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .output-box {
+      margin-top: 16px; padding: 14px 16px; border-radius: 10px;
+      background: #1e293b; color: #f8fafc; font-family: ui-monospace, monospace;
+      font-size: 13px; white-space: pre-wrap; word-break: break-word; min-height: 70px;
+    }
+    .output-box.pass { background: var(--green-bg); color: #065f46; border: 1px solid #6ee7b7; }
+    .output-box.fail { background: var(--red-bg); color: #991b1b; border: 1px solid #fca5a5; }
+
+    .answer-panel { display: none; margin-top: 20px; padding-top: 18px; border-top: 1px dashed var(--border); }
+    .answer-panel.open { display: block; }
+    pre.ref-code { background: #0f172a; color: #cbd5e1; padding: 16px; border-radius: 10px; font-family: ui-monospace, monospace; font-size: 13px; overflow-x: auto; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="./index.html">← 返回 Module 4 教程</a>
+      <a href="../index.html">教程总目录</a>
+    </div>
+
+    <div class="card">
+      <h1>Module 4 实战练习：PCI-DSS 日志脱敏扫描器（CI/CD 门禁）</h1>
+      <p class="subtitle">补全 <code>is_valid_luhn()</code> 和 <code>scan_logs()</code>，精准检出日志中的明文 PAN（过滤掉非卡号的 16 位订单号）与未脱敏的 CVV/PIN。</p>
+
+      <div class="status-bar">
+        <span class="py-status" id="pyStatus">⏳ 正在加载浏览器 Python 环境 (Pyodide)...</span>
+        <span style="font-size:12px;color:var(--muted);">提示：编辑框支持 Tab 键缩进</span>
+      </div>
+
+      <textarea class="code-editor" id="editor" spellcheck="false"></textarea>
+
+      <div class="btn-row">
+        <button class="btn primary" id="btnRun" disabled>▶ 运行代码并校验断言</button>
+        <button class="btn" id="btnReset">重置初始代码</button>
+        <button class="btn" id="btnReveal">Reveal Answer</button>
+      </div>
+
+      <div class="output-box" id="output">等待运行...</div>
+
+      <div class="answer-panel" id="answerPanel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <strong>参考实现（正则 + Luhn 校验避免误报）：</strong>
+          <button class="btn" onclick="applySolution()">一键填入参考代码并运行</button>
+        </div>
+        <pre class="ref-code" id="refCodeDisplay"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const INITIAL_CODE = `import re
+from typing import Dict, List
+
+# 模拟测试环境产生的 5 行支付网关日志（行号从 1 开始）
+SAMPLE_LOGS = [
+    "INFO  order_id=4111111111111112 amount=100.00 status=OK",         # 第 1 行：普通 16 位订单号（不满足 Luhn，不应误报）
+    "INFO  pan=411111******1111 cvv=*** status=APPROVED",             # 第 2 行：合规脱敏日志（不应报错）
+    "DEBUG req_body: pan=4111111111111111 amount=50.00",              # 第 3 行：违规！明文 PAN（满足 Luhn）
+    "DEBUG auth_req: pan=411111******1111 cvv=842",                   # 第 4 行：违规！明文 CVV 泄露
+    "WARN  retry_pin: user=u102 PIN=9527",                            # 第 5 行：违规！明文 PIN 泄露
+]
+
+def is_valid_luhn(number: str) -> bool:
+    """
+    TODO 1: 实现银行卡 Luhn 校验算法。
+    规则：从右往左，偶数位（第2、4、6...位）数字乘以 2，若结果大于 9 则减 9；
+    所有位求和能被 10 整除则返回 True。
+    """
+    # 在下方编写你的代码
+
+    return False
+
+def scan_logs(log_lines: List[str]) -> Dict[str, List[int]]:
+    """
+    TODO 2: 扫描日志行，返回违规行号列表（1-indexed）：
+    - "unmasked_pan": 包含 13-19 位连续数字且通过 is_valid_luhn() 校验的行号
+    - "leaked_sad": 包含 cvv= / cvc= / pin= （忽略大小写）且值不是纯 '*' 号的行号
+    """
+    violations = {"unmasked_pan": [], "leaked_sad": []}
+    # 在下方编写你的代码
+
+    return violations
+
+# --- 自动化验证断言 ---
+assert is_valid_luhn("4111111111111111") is True, "合法卡号 Luhn 校验应为 True"
+assert is_valid_luhn("4111111111111112") is False, "非法卡号/订单号 Luhn 校验应为 False"
+
+res = scan_logs(SAMPLE_LOGS)
+print("合规扫描结果:", res)
+assert res["unmasked_pan"] == [3], f"明文 PAN 检出错误: {res['unmasked_pan']}"
+assert res["leaked_sad"] == [4, 5], f"SAD 泄露检出错误: {res['leaked_sad']}"
+print("✅ Module 4 PCI-DSS 日志合规扫描断言全部通过！")`;
+
+    const SOLUTION_CODE = `def is_valid_luhn(number: str) -> bool:
+    if not number.isdigit():
+        return False
+    digits = [int(d) for d in number]
+    checksum = 0
+    for idx, d in enumerate(reversed(digits)):
+        if idx % 2 == 1:
+            d *= 2
+            if d > 9:
+                d -= 9
+        checksum += d
+    return checksum % 10 == 0
+
+def scan_logs(log_lines: List[str]) -> Dict[str, List[int]]:
+    violations = {"unmasked_pan": [], "leaked_sad": []}
+    pan_pattern = re.compile(r"\\b\\d{13,19}\\b")
+    sad_pattern = re.compile(r"(?i)\\b(?:cvv|cvc|pin)\\s*=\\s*([^\\s,]+)")
+
+    for line_no, line in enumerate(log_lines, start=1):
+        # 1. 检测明文 PAN（正则提取 + Luhn 二次过滤）
+        for candidate in pan_pattern.findall(line):
+            if is_valid_luhn(candidate):
+                violations["unmasked_pan"].append(line_no)
+                break
+
+        # 2. 检测未脱敏的 SAD（值不全是 *）
+        for match in sad_pattern.findall(line):
+            if not set(match) <= {"*"}:
+                violations["leaked_sad"].append(line_no)
+                break
+
+    return violations`;
+
+    const editor = document.getElementById('editor');
+    const output = document.getElementById('output');
+    const btnRun = document.getElementById('btnRun');
+    const pyStatus = document.getElementById('pyStatus');
+
+    editor.value = INITIAL_CODE;
+    document.getElementById('refCodeDisplay').textContent = SOLUTION_CODE;
+
+    editor.addEventListener('keydown', function (e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart, end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 4;
+      }
+    });
+
+    let pyodide = null;
+    async function initPyodide() {
+      try {
+        pyodide = await loadPyodide();
+        pyStatus.textContent = '✅ Python 3 环境已就绪';
+        pyStatus.classList.add('ready');
+        btnRun.disabled = false;
+      } catch (err) {
+        pyStatus.textContent = '❌ Python 环境加载失败，请刷新重试';
+      }
+    }
+    initPyodide();
+
+    async function runCode() {
+      if (!pyodide) return;
+      let logs = [];
+      pyodide.setStdout({ batched: (msg) => logs.push(msg) });
+      pyodide.setStderr({ batched: (msg) => logs.push(msg) });
+      output.className = 'output-box';
+      output.textContent = '运行中...';
+      try {
+        await pyodide.runPythonAsync(editor.value);
+        output.className = 'output-box pass';
+        output.textContent = logs.join('\n') || '运行完成（无输出）';
+      } catch (err) {
+        output.className = 'output-box fail';
+        output.textContent = (logs.length ? logs.join('\n') + '\n\n' : '') + err.message;
+      }
+    }
+
+    btnRun.onclick = runCode;
+    document.getElementById('btnReset').onclick = () => {
+      editor.value = INITIAL_CODE;
+      output.className = 'output-box';
+      output.textContent = '已重置代码，等待运行...';
+    };
+    document.getElementById('btnReveal').onclick = function () {
+      const open = document.getElementById('answerPanel').classList.toggle('open');
+      this.textContent = open ? 'Hide Answer' : 'Reveal Answer';
+    };
+    function applySolution() {
+      editor.value = INITIAL_CODE.replace(/def is_valid_luhn[\s\S]*?return violations/, SOLUTION_CODE);
+      runCode();
+    }
+  </script>
+</body>
+</html>

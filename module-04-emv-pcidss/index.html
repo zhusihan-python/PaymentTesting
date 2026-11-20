@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Module 4 | EMV 与 PCI-DSS 安全合规测试</title>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --blue: #2563eb; --blue-bg: #eff6ff;
+      --green: #059669; --green-bg: #ecfdf5;
+      --red: #dc2626; --red-bg: #fef2f2;
+      --amber: #d97706; --amber-bg: #fffbeb;
+      --purple: #7c3aed; --purple-bg: #f5f3ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      background: var(--bg); color: var(--text); padding: 24px 16px 60px; line-height: 1.65;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; }
+    .topbar a { text-decoration: none; color: var(--muted); font-weight: 600; }
+    .topbar a:hover { color: var(--text); }
+
+    .section {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 26px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    }
+    h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+    h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    h3 { font-size: 15px; font-weight: 700; margin: 18px 0 10px; }
+    .subtitle { font-size: 14px; color: var(--muted); }
+
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 13.5px; }
+    th, td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+    th { background: #f1f5f9; font-weight: 700; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: #f1f5f9; padding: 2px 5px; border-radius: 4px; }
+
+    .callout-red {
+      background: var(--red-bg); border-left: 4px solid var(--red);
+      padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 14px; margin: 14px 0; color: #7f1d1d;
+    }
+
+    .emv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; }
+    .emv-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-size: 13px; }
+    .emv-card strong { display: block; font-size: 14px; margin-bottom: 4px; color: var(--purple); }
+
+    /* DFD Header & Mode Switch */
+    .dfd-header {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+    }
+    .mode-group { display: flex; gap: 8px; }
+    .mode-btn {
+      padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border);
+      background: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .mode-btn.active-pass { background: var(--green-bg); color: var(--green); border-color: #6ee7b7; }
+    .mode-btn.active-fail { background: var(--red-bg); color: var(--red); border-color: #fca5a5; }
+
+    /* Diagram */
+    .diagram { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .node {
+      background: var(--bg); border: 2px solid var(--border); border-radius: 12px;
+      padding: 14px 10px; text-align: center; transition: all 0.25s; position: relative;
+    }
+    .zone-tag {
+      display: inline-block; font-size: 10.5px; font-weight: 700; padding: 1px 7px;
+      border-radius: 4px; margin-bottom: 6px; background: #e2e8f0; color: #475569;
+    }
+    .zone-tag.cde { background: #ede9fe; color: var(--purple); }
+    .node-title { font-weight: 700; font-size: 14px; }
+    .node-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .node.hl-pass { border-color: var(--green); background: var(--green-bg); transform: translateY(-2px); }
+    .node.hl-fail { border-color: var(--red); background: var(--red-bg); transform: translateY(-2px); }
+
+    /* Banner */
+    .banner {
+      border-radius: 12px; padding: 16px 20px; margin-bottom: 18px;
+      border-left: 5px solid var(--green); background: var(--green-bg);
+    }
+    .banner.fail { border-left-color: var(--red); background: var(--red-bg); }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .badge { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; color: #fff; background: var(--green); }
+    .banner.fail .badge { background: var(--red); }
+    .code-tag { font-family: ui-monospace, monospace; font-size: 12px; background: rgba(15,23,42,0.08); padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+    .step-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .step-detail { font-size: 14px; color: #334155; }
+
+    /* Audit Dashboard */
+    .audit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .audit-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: #fff; }
+    .audit-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .audit-val { font-size: 14px; font-weight: 700; margin-top: 5px; }
+    .audit-val.ok { color: var(--green); }
+    .audit-val.bad { color: var(--red); }
+
+    .controls { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px; }
+    .dots { display: flex; gap: 8px; }
+    .dot { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .dot.active { background: var(--text); color: #fff; border-color: var(--text); }
+    .btns { display: flex; gap: 8px; }
+    button.btn, a.cta-btn {
+      padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; color: var(--text);
+    }
+    button.btn.primary, a.cta-btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+    button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .footer-cta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+    @media (max-width: 700px) { .diagram { grid-template-columns: repeat(2, 1fr); } .audit-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a href="../index.html">← 返回教程总目录</a>
+      <a href="./exercise.html">直达 Python 合规扫描练习 →</a>
+    </div>
+
+    <!-- Part 1: Mental Models -->
+    <div class="section">
+      <h1>Module 4：EMV 与 PCI-DSS 安全合规测试</h1>
+      <p class="subtitle">在支付测试中，功能跑通只是及格线；守住“密钥验签”与“敏感数据不落盘”才是专业底线。</p>
+
+      <h3>1. PCI-DSS 两类核心数据边界（必背）</h3>
+      <table>
+        <thead><tr><th>数据分类</th><th>包含字段</th><th>存储要求</th><th>展示与日志要求</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>CHD（持卡人数据）</strong></td>
+            <td>主账号（PAN）、持卡人姓名、有效期、服务代码</td>
+            <td>允许存储，但 PAN 必须<strong>强加密（AES-256）或令牌化（Tokenization）</strong></td>
+            <td>必须掩码脱敏（最多仅展示前 6 后 4 位，如 <code>411111******1111</code>）</td>
+          </tr>
+          <tr>
+            <td><strong>SAD（敏感验证数据）</strong></td>
+            <td><strong>CVV/CVC 安全码</strong>、<strong>PIN / PIN Block</strong>、完整磁道数据</td>
+            <td><strong>严禁以任何形式落盘存储</strong>（授权完成后必须立刻从内存销毁，哪怕加密也不行）</td>
+            <td><strong>严禁打印到任何日志</strong>（应用日志、网关日志、ELK、监控链路）</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout-red">
+        <strong>PCI-DSS 测试铁律：</strong>在 CI/CD 回归测试结束后，必须自动扫描测试环境日志与数据库。只要发现一条未脱敏的明文卡号（PAN）或任意落盘的 CVV/PIN，直接判定为 <strong>P0 级阻断缺陷</strong>。
+      </div>
+
+      <h3>2. EMV 与 HSM 加密机测试要点</h3>
+      <div class="emv-grid">
+        <div class="emv-card"><strong>ARQC / ARPC 动态验签</strong>芯片生成一次性密文 ARQC 随 F55 上送，发卡行通过 HSM 校验通过后返回 ARPC。测试需覆盖篡改金额导致验签失败（F39=05）。</div>
+        <div class="emv-card"><strong>PIN Block 加密与锁卡</strong>用户密码绝不以明文传输，而是封装为加密 PIN Block。测试需验证连续 3 次错误 PIN 触发自动锁卡（F39=75）。</div>
+        <div class="emv-card"><strong>密钥轮换（Key Rotation）</strong>定期更换工作密钥（ZPK/PEK）时，验证新旧密钥平滑切换，不出现大面积交易验签失败。</div>
+      </div>
+    </div>
+
+    <!-- Part 2: Interactive CHD Data Flow Audit -->
+    <div class="section">
+      <div class="dfd-header">
+        <div>
+          <h2 style="margin-bottom:2px;">交互式分步 DFD：PCI-DSS 持卡人数据流审计图</h2>
+          <p class="subtitle">切换“合规标准架构”与“常见违规漏洞”，逐步审计数据在 CDE（持卡人数据环境）中的流转。</p>
+        </div>
+        <div class="mode-group">
+          <button class="mode-btn active-pass" id="btnPass" onclick="setMode('pass')">✅ 合规标准架构</button>
+          <button class="mode-btn" id="btnFail" onclick="setMode('fail')">❌ 常见违规漏洞</button>
+        </div>
+      </div>
+
+      <div class="diagram">
+        <div class="node" id="n-client"><span class="zone-tag">非 CDE 区</span><div class="node-title">终端 / App</div><div class="node-sub">采集卡号、CVV、PIN</div></div>
+        <div class="node" id="n-gw"><span class="zone-tag cde">CDE 边界</span><div class="node-title">API 网关</div><div class="node-sub">TLS 终止与日志记录</div></div>
+        <div class="node" id="n-core"><span class="zone-tag cde">CDE 核心区</span><div class="node-title">发卡行 CMS</div><div class="node-sub">业务处理与 DB 落盘</div></div>
+        <div class="node" id="n-hsm"><span class="zone-tag cde">高安加密区</span><div class="node-title">HSM 硬件加密机</div><div class="node-sub">ARQC/CVV/PIN 验签</div></div>
+      </div>
+
+      <div class="banner" id="banner">
+        <div class="meta">
+          <span class="badge" id="badge"></span>
+          <span class="code-tag" id="payload"></span>
+        </div>
+        <div class="step-title" id="title"></div>
+        <div class="step-detail" id="detail"></div>
+      </div>
+
+      <div class="audit-grid">
+        <div class="audit-card"><div class="audit-label">CHD（卡号 PAN）状态</div><div class="audit-val" id="a-chd"></div></div>
+        <div class="audit-card"><div class="audit-label">SAD（CVV / PIN）状态</div><div class="audit-val" id="a-sad"></div></div>
+        <div class="audit-card"><div class="audit-label">PCI-DSS 审计结论</div><div class="audit-val" id="a-res"></div></div>
+      </div>
+
+      <div class="controls">
+        <div class="dots" id="dots"></div>
+        <div class="btns">
+          <button class="btn" id="btnPrev">上一步</button>
+          <button class="btn primary" id="btnNext">下一步</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Part 3: Next Action -->
+    <div class="section footer-cta">
+      <div>
+        <h3 style="margin:0 0 4px;">下一步：Python 合规自动化扫描实战（Pyodide）</h3>
+        <p class="subtitle">在浏览器中亲手编写 Luhn 校验与日志正则扫描脚本，自动揪出泄露的明文卡号与 CVV。</p>
+      </div>
+      <a class="cta-btn primary" href="./exercise.html">进入 Python 练习 →</a>
+    </div>
+  </div>
+
+  <script>
+    const DATA = {
+      pass: [
+        {
+          nodes: ['client', 'gw'], badge: '合规传输', payload: 'TLS 1.3 + Encrypted PIN Block',
+          title: '1. 终端加密传输至 CDE 网关',
+          detail: 'App/POS 强制使用 TLS 1.2+ 传输卡号与 CVV；PIN 码在安全键盘/芯片内直接加密为 PIN Block，绝不以明文离开设备。',
+          chd: 'TLS 密文传输', sad: 'PIN Block 加密传输', res: '✅ 符合 PCI-DSS Req 4', ok: true
+        },
+        {
+          nodes: ['gw'], badge: '日志脱敏', payload: 'Log: pan=411111******1111, cvv=***',
+          title: '2. 网关拦截并脱敏打印访问日志',
+          detail: 'API 网关在打印请求日志前，通过统一脱敏切面将 PAN 掩码为前 6 后 4，并将 CVV/PIN 字段完全剔除或替换为 ***。',
+          chd: '日志仅留前 6 后 4', sad: '日志完全不可见', res: '✅ 符合 PCI-DSS Req 3.4', ok: true
+        },
+        {
+          nodes: ['core', 'hsm'], badge: '硬件验签', payload: 'HSM Verify(ARQC, CVV, PIN Block)',
+          title: '3. 核心系统透传至 HSM 完成验签',
+          detail: 'CMS 核心系统在内存中将加密 PIN Block 与 EMV F55 透传给硬件加密机（HSM）验签，密钥永不出 HSM 硬件边界。',
+          chd: '内存短暂流转', sad: 'HSM 硬件内部校验', res: '✅ 符合 EMV & HSM 规范', ok: true
+        },
+        {
+          nodes: ['core'], badge: '安全落盘', payload: 'DB: pan_token=tok_9x8a | SAD=丢弃',
+          title: '4. 授权完成：PAN 令牌化存储，SAD 立即销毁',
+          detail: '交易落库时仅保存 Token 或 AES-256 加密后的 PAN；CVV 与 PIN Block 随请求结束立刻从内存销毁，零落盘。',
+          chd: 'AES-256 / Token 存储', sad: '零落盘（已销毁）', res: '✅ 符合 PCI-DSS Req 3.2', ok: true
+        }
+      ],
+      fail: [
+        {
+          nodes: ['client', 'gw'], badge: '高危违规', payload: 'HTTP 明文 / 弱加密 TLS 1.0',
+          title: '1. 传输层配置不当导致明文暴露',
+          detail: '测试环境或旧版本接口兼容了 TLS 1.0/1.1 甚至降级为 HTTP，导致持卡人数据在公网可被中间人抓包窃取。',
+          chd: '存在抓包泄露风险', sad: 'CVV 明文暴露风险', res: '❌ 违反 PCI-DSS Req 4', ok: false
+        },
+        {
+          nodes: ['gw'], badge: 'P0 级缺陷', payload: 'ELK Log: {"pan":"4111111111111111","cvv":"842"}',
+          title: '2. 研发开启 DEBUG 日志打印完整 Request Body',
+          detail: '最常见线上事故：研发为了排查 Bug 直接打印了完整的 JSON 请求体，导致数万条明文卡号与 CVV 永久留存在 ELK 日志系统中！',
+          chd: '明文 PAN 泄露至日志', sad: 'CVV 泄露至日志！', res: '❌ 严重违反 Req 3.2/3.4', ok: false
+        },
+        {
+          nodes: ['core'], badge: '高危违规', payload: '软算法本地校验 + 硬编码密钥',
+          title: '3. 绕过 HSM 在业务代码里硬编码密钥',
+          detail: '为图省事在配置文件写死对称密钥并在应用服务器内存做软解密，一旦应用服务器被入侵，全量密钥与卡数据失守。',
+          chd: '密钥与数据同机风险', sad: 'PIN 面临内存转储风险', res: '❌ 违反密钥管理规范', ok: false
+        },
+        {
+          nodes: ['core'], badge: 'P0 级缺陷', payload: 'MySQL: INSERT INTO orders (pan, cvv) VALUES (...)',
+          title: '4. 数据库违规落盘存储 CVV（哪怕加密）',
+          detail: '产品或研发为了“方便用户下次一键支付”，把 CVV 加密后存进了数据库表。PCI-DSS 明确规定：授权后严禁以任何形式存储 SAD！',
+          chd: '未做有效令牌化隔离', sad: 'CVV 违规落盘！', res: '❌ 吊销资质级违规', ok: false
+        }
+      ]
+    };
+
+    let mode = 'pass', stepIdx = 0;
+
+    function setMode(m) {
+      mode = m; stepIdx = 0;
+      document.getElementById('btnPass').className = 'mode-btn' + (m === 'pass' ? ' active-pass' : '');
+      document.getElementById('btnFail').className = 'mode-btn' + (m === 'fail' ? ' active-fail' : '');
+      render();
+    }
+
+    function render() {
+      const list = DATA[mode], s = list[stepIdx];
+      ['client', 'gw', 'core', 'hsm'].forEach(id => {
+        document.getElementById('n-' + id).className = 'node' + (s.nodes.includes(id) ? (s.ok ? ' hl-pass' : ' hl-fail') : '');
+      });
+      document.getElementById('banner').className = 'banner' + (s.ok ? '' : ' fail');
+      document.getElementById('badge').textContent = s.badge;
+      document.getElementById('payload').textContent = s.payload;
+      document.getElementById('title').textContent = s.title;
+      document.getElementById('detail').textContent = s.detail;
+
+      const cls = s.ok ? 'audit-val ok' : 'audit-val bad';
+      document.getElementById('a-chd').className = cls; document.getElementById('a-chd').textContent = s.chd;
+      document.getElementById('a-sad').className = cls; document.getElementById('a-sad').textContent = s.sad;
+      document.getElementById('a-res').className = cls; document.getElementById('a-res').textContent = s.res;
+
+      const dots = document.getElementById('dots');
+      dots.innerHTML = '';
+      list.forEach((_, i) => {
+        const d = document.createElement('button');
+        d.className = 'dot' + (i === stepIdx ? ' active' : '');
+        d.textContent = i + 1;
+        d.onclick = () => { stepIdx = i; render(); };
+        dots.appendChild(d);
+      });
+      document.getElementById('btnPrev').disabled = stepIdx === 0;
+      document.getElementById('btnNext').disabled = stepIdx === list.length - 1;
+    }
+
+    document.getElementById('btnPrev').onclick = () => { if (stepIdx > 0) { stepIdx--; render(); } };
+    document.getElementById('btnNext').onclick = () => { if (stepIdx < DATA[mode].length - 1) { stepIdx++; render(); } };
+    render();
+  </script>
+</body>
+</html>
