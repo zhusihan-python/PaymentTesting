@@ -51,7 +51,7 @@
     /* DFD Header & Mode Switch */
     .dfd-header {
       display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
-      gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+      gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 18px;
     }
     .mode-group { display: flex; gap: 8px; }
     .mode-btn {
@@ -61,25 +61,32 @@
     .mode-btn.active-pass { background: var(--green-bg); color: var(--green); border-color: #6ee7b7; }
     .mode-btn.active-fail { background: var(--red-bg); color: var(--red); border-color: #fca5a5; }
 
-    /* Diagram */
-    .diagram { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-    .node {
-      background: var(--bg); border: 2px solid var(--border); border-radius: 12px;
-      padding: 14px 10px; text-align: center; transition: all 0.25s; position: relative;
+    /* SVG Sequence Diagram */
+    .svg-wrap {
+      width: 100%; overflow-x: auto; background: #fbfdff;
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 8px; margin-bottom: 18px;
     }
-    .zone-tag {
-      display: inline-block; font-size: 10.5px; font-weight: 700; padding: 1px 7px;
-      border-radius: 4px; margin-bottom: 6px; background: #e2e8f0; color: #475569;
-    }
-    .zone-tag.cde { background: #ede9fe; color: var(--purple); }
-    .node-title { font-weight: 700; font-size: 14px; }
-    .node-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
-    .node.hl-pass { border-color: var(--green); background: var(--green-bg); transform: translateY(-2px); }
-    .node.hl-fail { border-color: var(--red); background: var(--red-bg); transform: translateY(-2px); }
+    svg.seq-svg { width: 100%; min-width: 680px; height: auto; display: block; }
+    .lifeline { stroke: #cbd5e1; stroke-width: 2; stroke-dasharray: 6 5; }
+    .node-box { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; transition: all 0.25s; }
+    .node-box.hl-pass { fill: #ecfdf5; stroke: #059669; stroke-width: 2.5; }
+    .node-box.hl-fail { fill: #fef2f2; stroke: #dc2626; stroke-width: 2.5; }
+    .node-text-main { font-size: 13.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .node-text-sub { font-size: 11px; fill: #64748b; text-anchor: middle; }
+
+    .arrow-group { transition: opacity 0.25s; cursor: pointer; }
+    .arrow-group.future { opacity: 0.22; }
+    .arrow-group.past { opacity: 0.55; }
+    .arrow-group.active { opacity: 1; }
+    .arrow-label { font-size: 12px; font-weight: 700; text-anchor: middle; }
+
+    @keyframes dashFlow { to { stroke-dashoffset: -24; } }
+    .flow-active-line { stroke-dasharray: 8 4; animation: dashFlow 0.7s linear infinite; }
 
     /* Banner */
     .banner {
-      border-radius: 12px; padding: 16px 20px; margin-bottom: 18px;
+      border-radius: 12px; padding: 16px 20px; margin-bottom: 16px;
       border-left: 5px solid var(--green); background: var(--green-bg);
     }
     .banner.fail { border-left-color: var(--red); background: var(--red-bg); }
@@ -111,7 +118,7 @@
     button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .footer-cta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 
-    @media (max-width: 700px) { .diagram { grid-template-columns: repeat(2, 1fr); } .audit-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) { .audit-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -157,12 +164,12 @@
       </div>
     </div>
 
-    <!-- Part 2: Interactive CHD Data Flow Audit -->
+    <!-- Part 2: Interactive CHD Data Flow Audit with SVG Lifelines -->
     <div class="section">
       <div class="dfd-header">
         <div>
           <h2 style="margin-bottom:2px;">交互式分步 DFD：PCI-DSS 持卡人数据流审计图</h2>
-          <p class="subtitle">切换“合规标准架构”与“常见违规漏洞”，逐步审计数据在 CDE（持卡人数据环境）中的流转。</p>
+          <p class="subtitle">切换“合规标准架构”与“常见违规漏洞”，点击图上步骤审计数据在 CDE 边界内的流转。</p>
         </div>
         <div class="mode-group">
           <button class="mode-btn active-pass" id="btnPass" onclick="setMode('pass')">✅ 合规标准架构</button>
@@ -170,11 +177,54 @@
         </div>
       </div>
 
-      <div class="diagram">
-        <div class="node" id="n-client"><span class="zone-tag">非 CDE 区</span><div class="node-title">终端 / App</div><div class="node-sub">采集卡号、CVV、PIN</div></div>
-        <div class="node" id="n-gw"><span class="zone-tag cde">CDE 边界</span><div class="node-title">API 网关</div><div class="node-sub">TLS 终止与日志记录</div></div>
-        <div class="node" id="n-core"><span class="zone-tag cde">CDE 核心区</span><div class="node-title">发卡行 CMS</div><div class="node-sub">业务处理与 DB 落盘</div></div>
-        <div class="node" id="n-hsm"><span class="zone-tag cde">高安加密区</span><div class="node-title">HSM 硬件加密机</div><div class="node-sub">ARQC/CVV/PIN 验签</div></div>
+      <!-- SVG Sequence Diagram -->
+      <div class="svg-wrap">
+        <svg class="seq-svg" viewBox="0 0 880 330" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow-pass" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+            </marker>
+            <marker id="arrow-fail" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626" />
+            </marker>
+          </defs>
+
+          <!-- CDE Zone Boundary (z-order: bottom-most) -->
+          <g id="cde-zone">
+            <rect x="232" y="6" width="636" height="316" rx="12" fill="#f5f3ff" fill-opacity="0.45" stroke="#c4b5fd" stroke-width="1.5" stroke-dasharray="6 4" />
+            <text x="246" y="23" font-size="11" font-weight="700" fill="#6d28d9">🔒 CDE 持卡人数据隔离环境（受 PCI-DSS 强审计）</text>
+          </g>
+
+          <!-- Lifelines (z-order: bottom) -->
+          <g id="lifelines">
+            <line class="lifeline" x1="110" y1="88" x2="110" y2="314" />
+            <line class="lifeline" x1="330" y1="88" x2="330" y2="314" />
+            <line class="lifeline" x1="550" y1="88" x2="550" y2="314" />
+            <line class="lifeline" x1="770" y1="88" x2="770" y2="314" />
+          </g>
+
+          <!-- Participant Nodes -->
+          <g id="nodes">
+            <rect id="n-client" class="node-box" x="25" y="32" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="110" y="56">终端 / App</text>
+            <text class="node-text-sub" x="110" y="74">非 CDE 区 · 采集数据</text>
+
+            <rect id="n-gw" class="node-box" x="245" y="32" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="330" y="56">API 网关</text>
+            <text class="node-text-sub" x="330" y="74">CDE 边界 · TLS 与日志</text>
+
+            <rect id="n-core" class="node-box" x="465" y="32" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="550" y="56">发卡行 CMS</text>
+            <text class="node-text-sub" x="550" y="74">CDE 核心 · 业务与 DB</text>
+
+            <rect id="n-hsm" class="node-box" x="685" y="32" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="770" y="56">HSM 硬件加密机</text>
+            <text class="node-text-sub" x="770" y="74">高安区 · 验签与密钥</text>
+          </g>
+
+          <!-- Dynamic Step Arrows (z-order: top) -->
+          <g id="arrowsLayer"></g>
+        </svg>
       </div>
 
       <div class="banner" id="banner">
@@ -195,6 +245,7 @@
       <div class="controls">
         <div class="dots" id="dots"></div>
         <div class="btns">
+          <button class="btn" id="btnReset">重置</button>
           <button class="btn" id="btnPrev">上一步</button>
           <button class="btn primary" id="btnNext">下一步</button>
         </div>
@@ -212,28 +263,35 @@
   </div>
 
   <script>
+    const NODE_X = { client: 110, gw: 330, core: 550, hsm: 770 };
+    const STEP_Y = [126, 178, 232, 286];
+
     const DATA = {
       pass: [
         {
           nodes: ['client', 'gw'], badge: '合规传输', payload: 'TLS 1.3 + Encrypted PIN Block',
+          arrow: { type: 'line', from: 'client', to: 'gw', label: '① TLS 1.3 + 加密 PIN Block' },
           title: '1. 终端加密传输至 CDE 网关',
           detail: 'App/POS 强制使用 TLS 1.2+ 传输卡号与 CVV；PIN 码在安全键盘/芯片内直接加密为 PIN Block，绝不以明文离开设备。',
           chd: 'TLS 密文传输', sad: 'PIN Block 加密传输', res: '✅ 符合 PCI-DSS Req 4', ok: true
         },
         {
           nodes: ['gw'], badge: '日志脱敏', payload: 'Log: pan=411111******1111, cvv=***',
+          arrow: { type: 'self', node: 'gw', label: '② 网关脱敏日志 (PAN掩码/剔除CVV)' },
           title: '2. 网关拦截并脱敏打印访问日志',
           detail: 'API 网关在打印请求日志前，通过统一脱敏切面将 PAN 掩码为前 6 后 4，并将 CVV/PIN 字段完全剔除或替换为 ***。',
           chd: '日志仅留前 6 后 4', sad: '日志完全不可见', res: '✅ 符合 PCI-DSS Req 3.4', ok: true
         },
         {
           nodes: ['core', 'hsm'], badge: '硬件验签', payload: 'HSM Verify(ARQC, CVV, PIN Block)',
+          arrow: { type: 'line', from: 'core', to: 'hsm', label: '③ 透传 HSM 硬件验签' },
           title: '3. 核心系统透传至 HSM 完成验签',
           detail: 'CMS 核心系统在内存中将加密 PIN Block 与 EMV F55 透传给硬件加密机（HSM）验签，密钥永不出 HSM 硬件边界。',
           chd: '内存短暂流转', sad: 'HSM 硬件内部校验', res: '✅ 符合 EMV & HSM 规范', ok: true
         },
         {
           nodes: ['core'], badge: '安全落盘', payload: 'DB: pan_token=tok_9x8a | SAD=丢弃',
+          arrow: { type: 'self', node: 'core', label: '④ PAN 令牌化落盘，SAD 立即销毁' },
           title: '4. 授权完成：PAN 令牌化存储，SAD 立即销毁',
           detail: '交易落库时仅保存 Token 或 AES-256 加密后的 PAN；CVV 与 PIN Block 随请求结束立刻从内存销毁，零落盘。',
           chd: 'AES-256 / Token 存储', sad: '零落盘（已销毁）', res: '✅ 符合 PCI-DSS Req 3.2', ok: true
@@ -242,24 +300,28 @@
       fail: [
         {
           nodes: ['client', 'gw'], badge: '高危违规', payload: 'HTTP 明文 / 弱加密 TLS 1.0',
+          arrow: { type: 'line', from: 'client', to: 'gw', label: '① HTTP / TLS 1.0 明文风险 ✕' },
           title: '1. 传输层配置不当导致明文暴露',
           detail: '测试环境或旧版本接口兼容了 TLS 1.0/1.1 甚至降级为 HTTP，导致持卡人数据在公网可被中间人抓包窃取。',
           chd: '存在抓包泄露风险', sad: 'CVV 明文暴露风险', res: '❌ 违反 PCI-DSS Req 4', ok: false
         },
         {
           nodes: ['gw'], badge: 'P0 级缺陷', payload: 'ELK Log: {"pan":"4111111111111111","cvv":"842"}',
+          arrow: { type: 'self', node: 'gw', label: '② DEBUG 日志打印明文 PAN & CVV ✕' },
           title: '2. 研发开启 DEBUG 日志打印完整 Request Body',
           detail: '最常见线上事故：研发为了排查 Bug 直接打印了完整的 JSON 请求体，导致数万条明文卡号与 CVV 永久留存在 ELK 日志系统中！',
           chd: '明文 PAN 泄露至日志', sad: 'CVV 泄露至日志！', res: '❌ 严重违反 Req 3.2/3.4', ok: false
         },
         {
           nodes: ['core'], badge: '高危违规', payload: '软算法本地校验 + 硬编码密钥',
+          arrow: { type: 'self', node: 'core', label: '③ 绕过 HSM，硬编码密钥软解密 ✕' },
           title: '3. 绕过 HSM 在业务代码里硬编码密钥',
           detail: '为图省事在配置文件写死对称密钥并在应用服务器内存做软解密，一旦应用服务器被入侵，全量密钥与卡数据失守。',
           chd: '密钥与数据同机风险', sad: 'PIN 面临内存转储风险', res: '❌ 违反密钥管理规范', ok: false
         },
         {
           nodes: ['core'], badge: 'P0 级缺陷', payload: 'MySQL: INSERT INTO orders (pan, cvv) VALUES (...)',
+          arrow: { type: 'self', node: 'core', label: '④ 数据库违规落盘存储 CVV ✕' },
           title: '4. 数据库违规落盘存储 CVV（哪怕加密）',
           detail: '产品或研发为了“方便用户下次一键支付”，把 CVV 加密后存进了数据库表。PCI-DSS 明确规定：授权后严禁以任何形式存储 SAD！',
           chd: '未做有效令牌化隔离', sad: 'CVV 违规落盘！', res: '❌ 吊销资质级违规', ok: false
@@ -268,6 +330,7 @@
     };
 
     let mode = 'pass', stepIdx = 0;
+    function goStep(i) { stepIdx = i; render(); }
 
     function setMode(m) {
       mode = m; stepIdx = 0;
@@ -276,11 +339,57 @@
       render();
     }
 
+    function renderArrows(list) {
+      const layer = document.getElementById('arrowsLayer');
+      let svgHtml = '';
+
+      list.forEach((s, i) => {
+        const y = STEP_Y[i];
+        const stroke = s.ok ? '#059669' : '#dc2626';
+        const bg = s.ok ? '#ecfdf5' : '#fef2f2';
+        const textCol = s.ok ? '#047857' : '#b91c1c';
+        const marker = s.ok ? 'arrow-pass' : 'arrow-fail';
+        const stateCls = i === stepIdx ? 'active' : (i < stepIdx ? 'past' : 'future');
+        const animCls = i === stepIdx ? ' flow-active-line' : '';
+        const a = s.arrow;
+
+        svgHtml += `<g class="arrow-group ${stateCls}" onclick="goStep(${i})">`;
+        if (a.type === 'line') {
+          const x1 = NODE_X[a.from];
+          const x2 = NODE_X[a.to] + (NODE_X[a.to] > x1 ? -8 : 8);
+          const midX = (NODE_X[a.from] + NODE_X[a.to]) / 2;
+          const boxW = Math.max(180, a.label.length * 10.5);
+          svgHtml += `
+            <line class="${animCls}" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"
+                  stroke="${stroke}" stroke-width="2.5" marker-end="url(#${marker})" />
+            <rect x="${midX - boxW / 2}" y="${y - 23}" width="${boxW}" height="20" rx="4" fill="${bg}" stroke="${stroke}" stroke-opacity="0.25" />
+            <text class="arrow-label" x="${midX}" y="${y - 9}" fill="${textCol}">${a.label}</text>
+          `;
+        } else if (a.type === 'self') {
+          const nx = NODE_X[a.node];
+          const boxW = Math.max(210, a.label.length * 10.2);
+          svgHtml += `
+            <path class="${animCls}" d="M ${nx} ${y - 12} C ${nx + 64} ${y - 12}, ${nx + 64} ${y + 14}, ${nx + 8} ${y + 14}"
+                  fill="none" stroke="${stroke}" stroke-width="2.5" marker-end="url(#${marker})" />
+            <rect x="${nx - boxW - 12}" y="${y - 10}" width="${boxW}" height="22" rx="4" fill="${bg}" stroke="${stroke}" stroke-opacity="0.25" />
+            <text class="arrow-label" x="${nx - boxW / 2 - 12}" y="${y + 5}" fill="${textCol}">${a.label}</text>
+          `;
+        }
+        svgHtml += `</g>`;
+      });
+
+      layer.innerHTML = svgHtml;
+    }
+
     function render() {
       const list = DATA[mode], s = list[stepIdx];
       ['client', 'gw', 'core', 'hsm'].forEach(id => {
-        document.getElementById('n-' + id).className = 'node' + (s.nodes.includes(id) ? (s.ok ? ' hl-pass' : ' hl-fail') : '');
+        const el = document.getElementById('n-' + id);
+        el.setAttribute('class', 'node-box' + (s.nodes.includes(id) ? (s.ok ? ' hl-pass' : ' hl-fail') : ''));
       });
+
+      renderArrows(list);
+
       document.getElementById('banner').className = 'banner' + (s.ok ? '' : ' fail');
       document.getElementById('badge').textContent = s.badge;
       document.getElementById('payload').textContent = s.payload;
@@ -298,7 +407,7 @@
         const d = document.createElement('button');
         d.className = 'dot' + (i === stepIdx ? ' active' : '');
         d.textContent = i + 1;
-        d.onclick = () => { stepIdx = i; render(); };
+        d.onclick = () => goStep(i);
         dots.appendChild(d);
       });
       document.getElementById('btnPrev').disabled = stepIdx === 0;
@@ -307,6 +416,7 @@
 
     document.getElementById('btnPrev').onclick = () => { if (stepIdx > 0) { stepIdx--; render(); } };
     document.getElementById('btnNext').onclick = () => { if (stepIdx < DATA[mode].length - 1) { stepIdx++; render(); } };
+    document.getElementById('btnReset').onclick = () => { stepIdx = 0; render(); };
     render();
   </script>
 </body>

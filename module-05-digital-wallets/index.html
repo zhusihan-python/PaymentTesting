@@ -47,23 +47,38 @@
     .idv-card strong { display: block; font-size: 14px; margin-bottom: 4px; }
 
     /* Tabs */
-    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 20px; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 18px; }
     .tab { padding: 7px 15px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
     .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
 
-    /* Diagram */
-    .diagram { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
-    .node { background: var(--bg); border: 2px solid var(--border); border-radius: 12px; padding: 14px 10px; text-align: center; transition: all 0.25s; }
-    .node-title { font-weight: 700; font-size: 14px; }
-    .node-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
-    .node.hl-blue { border-color: var(--blue); background: var(--blue-bg); transform: translateY(-2px); }
-    .node.hl-amber { border-color: var(--amber); background: var(--amber-bg); transform: translateY(-2px); }
-    .node.hl-green { border-color: var(--green); background: var(--green-bg); transform: translateY(-2px); }
-    .node.hl-red { border-color: var(--red); background: var(--red-bg); transform: translateY(-2px); }
-    .node.hl-purple { border-color: var(--purple); background: var(--purple-bg); transform: translateY(-2px); }
+    /* SVG Sequence Diagram */
+    .svg-wrap {
+      width: 100%; overflow-x: auto; background: #fbfdff;
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 8px; margin-bottom: 18px;
+    }
+    svg.seq-svg { width: 100%; min-width: 680px; height: auto; display: block; }
+    .lifeline { stroke: #cbd5e1; stroke-width: 2; stroke-dasharray: 6 5; }
+    .node-box { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; transition: all 0.25s; }
+    .node-box.hl-blue { fill: #eff6ff; stroke: #2563eb; stroke-width: 2.5; }
+    .node-box.hl-amber { fill: #fffbeb; stroke: #d97706; stroke-width: 2.5; }
+    .node-box.hl-purple { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 2.5; }
+    .node-box.hl-green { fill: #ecfdf5; stroke: #059669; stroke-width: 2.5; }
+    .node-box.hl-red { fill: #fef2f2; stroke: #dc2626; stroke-width: 2.5; }
+    .node-text-main { font-size: 13.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .node-text-sub { font-size: 11px; fill: #64748b; text-anchor: middle; }
+
+    .arrow-group { transition: opacity 0.25s; cursor: pointer; }
+    .arrow-group.future { opacity: 0.22; }
+    .arrow-group.past { opacity: 0.55; }
+    .arrow-group.active { opacity: 1; }
+    .arrow-label { font-size: 12px; font-weight: 700; text-anchor: middle; }
+
+    @keyframes dashFlow { to { stroke-dashoffset: -24; } }
+    .flow-active-line { stroke-dasharray: 8 4; animation: dashFlow 0.7s linear infinite; }
 
     /* Banner */
-    .banner { border-radius: 12px; padding: 16px 20px; margin-bottom: 18px; border-left: 5px solid var(--blue); background: var(--blue-bg); }
+    .banner { border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; border-left: 5px solid var(--blue); background: var(--blue-bg); }
     .banner.amber { border-left-color: var(--amber); background: var(--amber-bg); }
     .banner.green { border-left-color: var(--green); background: var(--green-bg); }
     .banner.red { border-left-color: var(--red); background: var(--red-bg); }
@@ -100,7 +115,7 @@
     button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .footer-cta { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 
-    @media (max-width: 700px) { .diagram { grid-template-columns: repeat(2, 1fr); } .idv-grid, .state-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) { .idv-grid, .state-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -134,21 +149,67 @@
       </div>
     </div>
 
-    <!-- Part 2: Interactive DFD -->
+    <!-- Part 2: Interactive DFD with SVG Lifelines -->
     <div class="section">
       <h2>交互式分步 DFD：绑卡令牌化与主卡挂失联动</h2>
-      <p class="subtitle">切换下方两个高频测试场景，观察 FPAN 与多设备 DPAN 的状态如何同步变化。</p>
+      <p class="subtitle">切换下方两个高频测试场景，点击图上步骤或下方按钮观察 FPAN 与多设备 DPAN 的状态同步。</p>
 
       <div class="tabs">
         <button class="tab active" onclick="selectScenario('provision', this)">场景 A：手动绑卡（黄通 OTP 激活）</button>
         <button class="tab" onclick="selectScenario('sync', this)">场景 B：主卡挂失/删卡联动</button>
       </div>
 
-      <div class="diagram">
-        <div class="node" id="n-dev"><div class="node-title">Apple / Google Wallet</div><div class="node-sub">iPhone &amp; Watch 钱包</div></div>
-        <div class="node" id="n-tsp"><div class="node-title">卡组织 TSP</div><div class="node-sub">Visa VTS / MC MDES</div></div>
-        <div class="node" id="n-iss"><div class="node-title">发卡行 CMS</div><div class="node-sub">风控决策与状态同步</div></div>
-        <div class="node" id="n-user"><div class="node-title">持卡人</div><div class="node-sub">接收 OTP / 操作挂失</div></div>
+      <!-- SVG Sequence Diagram -->
+      <div class="svg-wrap">
+        <svg class="seq-svg" viewBox="0 0 880 310" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+            </marker>
+            <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706" />
+            </marker>
+            <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#7c3aed" />
+            </marker>
+            <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+            </marker>
+            <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626" />
+            </marker>
+          </defs>
+
+          <!-- Lifelines (z-order: bottom) -->
+          <g id="lifelines">
+            <line class="lifeline" x1="110" y1="68" x2="110" y2="296" />
+            <line class="lifeline" x1="330" y1="68" x2="330" y2="296" />
+            <line class="lifeline" x1="550" y1="68" x2="550" y2="296" />
+            <line class="lifeline" x1="770" y1="68" x2="770" y2="296" />
+          </g>
+
+          <!-- Participant Nodes -->
+          <g id="nodes">
+            <rect id="n-user" class="node-box" x="25" y="12" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="110" y="36">持卡人</text>
+            <text class="node-text-sub" x="110" y="54">接收 OTP / 操作挂失</text>
+
+            <rect id="n-dev" class="node-box" x="245" y="12" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="330" y="36">Apple / Google Wallet</text>
+            <text class="node-text-sub" x="330" y="54">iPhone &amp; Watch 钱包</text>
+
+            <rect id="n-tsp" class="node-box" x="465" y="12" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="550" y="36">卡组织 TSP</text>
+            <text class="node-text-sub" x="550" y="54">Visa VTS / MC MDES</text>
+
+            <rect id="n-iss" class="node-box" x="685" y="12" width="170" height="56" rx="10" />
+            <text class="node-text-main" x="770" y="36">发卡行 CMS</text>
+            <text class="node-text-sub" x="770" y="54">风控决策与状态同步</text>
+          </g>
+
+          <!-- Dynamic Step Arrows (z-order: top) -->
+          <g id="arrowsLayer"></g>
+        </svg>
       </div>
 
       <div class="banner" id="banner">
@@ -169,6 +230,7 @@
       <div class="controls">
         <div class="dots" id="dots"></div>
         <div class="btns">
+          <button class="btn" id="btnReset">重置</button>
           <button class="btn" id="btnPrev">上一步</button>
           <button class="btn primary" id="btnNext">下一步</button>
         </div>
@@ -186,28 +248,42 @@
   </div>
 
   <script>
+    const NODE_X = { user: 110, dev: 330, tsp: 550, iss: 770 };
+    const STEP_Y = [110, 162, 214, 266];
+    const COLORS = {
+      blue:   { stroke: '#2563eb', bg: '#eff6ff', text: '#1d4ed8' },
+      amber:  { stroke: '#d97706', bg: '#fffbeb', text: '#b45309' },
+      purple: { stroke: '#7c3aed', bg: '#f5f3ff', text: '#6d28d9' },
+      green:  { stroke: '#059669', bg: '#ecfdf5', text: '#047857' },
+      red:    { stroke: '#dc2626', bg: '#fef2f2', text: '#b91c1c' }
+    };
+
     const SCENARIOS = {
       provision: [
         {
           color: 'blue', badge: '发起绑卡', payload: 'Check Eligibility (FPAN + Device Info)',
+          arrow: { type: 'line', from: 'user', to: 'iss', label: '① 手动输卡号申请绑卡 (经 Wallet & TSP)' },
           title: '1. 用户在 iPhone 手动输入卡号申请绑卡', nodes: ['user', 'dev', 'tsp', 'iss'],
           detail: 'Apple Wallet 收集设备风险评分（如位置、Apple ID 历史）并经 VTS/MDES 转发给发卡行校验卡片资格。',
           fpan: ['Active', 'st-active'], d1: ['未生成', ''], d2: ['Active (已有)', 'st-active']
         },
         {
           color: 'amber', badge: '黄通决策', payload: 'Decision = REQUIRE_ADDITIONAL_AUTH (OTP)',
+          arrow: { type: 'line', from: 'iss', to: 'dev', label: '② 黄通决策：要求短信 OTP (生成待激活 DPAN_1)' },
           title: '2. 发卡行风控判定走“黄通（Yellow Path）”', nodes: ['iss', 'tsp', 'dev'],
           detail: '发卡行确认卡片有效，但因是手动输卡号，要求用户进行短信 OTP 验证。此时 VTS 先生成一个处于“待激活”状态的 DPAN_1。',
           fpan: ['Active', 'st-active'], d1: ['Inactive (待验证)', 'st-pending'], d2: ['Active (已有)', 'st-active']
         },
         {
           color: 'purple', badge: '身份核验', payload: 'SMS OTP: 682910 -> Verify Success',
+          arrow: { type: 'line', from: 'user', to: 'iss', label: '③ 输入 6 位短信 OTP 核验通过' },
           title: '3. 用户输入短信验证码完成 ID&V', nodes: ['user', 'dev', 'iss'],
           detail: '发卡行发送 6 位 OTP 至用户预留手机号。用户输入正确验证码后，发卡行通知 VTS/MDES 激活该令牌。',
           fpan: ['Active', 'st-active'], d1: ['校验通过，激活中', 'st-pending'], d2: ['Active (已有)', 'st-active']
         },
         {
           color: 'green', badge: '绑卡完成', payload: 'Token Activated (DPAN_1 -> SE 芯片)',
+          arrow: { type: 'line', from: 'tsp', to: 'dev', label: '④ 激活 DPAN_1 写入安全芯片' },
           title: '4. DPAN_1 写入手机安全芯片，可挥卡支付', nodes: ['tsp', 'dev'],
           detail: '令牌状态变为 Active，写入 iPhone 安全芯片。此后每次 Apple Pay 消费均使用 DPAN_1 + 动态加密密文，绝不暴露真实卡号。',
           fpan: ['Active', 'st-active'], d1: ['Active (可支付)', 'st-active'], d2: ['Active (已有)', 'st-active']
@@ -216,24 +292,28 @@
       sync: [
         {
           color: 'blue', badge: '初始状态', payload: '1 FPAN 绑定 2 台设备令牌',
+          arrow: { type: 'self', node: 'iss', label: '① 初始：1 主卡关联 2 个活跃 DPAN' },
           title: '1. 主卡同时绑定了 iPhone 与 Apple Watch', nodes: ['dev', 'iss'],
           detail: '初始状态下，主卡（FPAN）以及两台设备的令牌（DPAN_1、DPAN_2）均处于 Active 正常可用状态。',
           fpan: ['Active', 'st-active'], d1: ['Active', 'st-active'], d2: ['Active', 'st-active']
         },
         {
           color: 'amber', badge: '单端删卡', payload: 'Delete Token (仅删除 DPAN_1)',
+          arrow: { type: 'line', from: 'dev', to: 'iss', label: '② iPhone 移卡：仅注销 DPAN_1 (单向隔离)' },
           title: '2. 用户仅在 iPhone 钱包里移除了卡片', nodes: ['user', 'dev', 'tsp', 'iss'],
           detail: '测试重点（正向隔离）：用户在 iPhone 上删除卡片，仅注销 DPAN_1；主卡 FPAN 和手表上的 DPAN_2 必须保持 Active 不受影响！',
           fpan: ['Active (不受影响)', 'st-active'], d1: ['Deactivated (已删)', 'st-dead'], d2: ['Active (不受影响)', 'st-active']
         },
         {
           color: 'red', badge: '主卡挂失', payload: 'FPAN = LOST -> Push Lifecycle Update',
-          title: '3. 用户实体卡丢失，在 App 发起主卡挂失', nodes: ['user', 'iss', 'tsp'],
+          arrow: { type: 'line', from: 'iss', to: 'dev', label: '③ 主卡挂失：推送 TSP 联动注销全部设备令牌' },
+          title: '3. 用户实体卡丢失，在 App 发起主卡挂失', nodes: ['user', 'iss', 'tsp', 'dev'],
           detail: '发卡行将 FPAN 置为 Lost，并必须主动调用 VTS/MDES 生命周期接口，同步吊销或挂起该主卡下所有关联的活跃令牌。',
           fpan: ['Lost (永久停用)', 'st-dead'], d1: ['Deactivated', 'st-dead'], d2: ['Deactivated (联动停用)', 'st-dead']
         },
         {
           color: 'green', badge: '换卡无感更新', payload: 'Reissue New FPAN -> Auto-Update Token',
+          arrow: { type: 'line', from: 'iss', to: 'tsp', label: '④ 进阶：换卡自动重映射新 FPAN' },
           title: '4. 进阶特性：换卡不换令牌（Card Replacement）', nodes: ['iss', 'tsp', 'dev'],
           detail: '若支持卡组织自动更新服务，发卡行补发新主卡后可通知 TSP 将原活跃令牌无缝重新映射到新 FPAN，用户无需重新绑卡。',
           fpan: ['New FPAN Active', 'st-active'], d1: ['可重新绑新卡', 'st-pending'], d2: ['若换卡保留可自动更新', 'st-active']
@@ -242,6 +322,7 @@
     };
 
     let currentKey = 'provision', stepIdx = 0;
+    function goStep(i) { stepIdx = i; render(); }
 
     function selectScenario(key, btn) {
       currentKey = key; stepIdx = 0;
@@ -250,11 +331,54 @@
       render();
     }
 
+    function renderArrows(list) {
+      const layer = document.getElementById('arrowsLayer');
+      let svgHtml = '';
+
+      list.forEach((s, i) => {
+        const y = STEP_Y[i];
+        const c = COLORS[s.color];
+        const stateCls = i === stepIdx ? 'active' : (i < stepIdx ? 'past' : 'future');
+        const animCls = i === stepIdx ? ' flow-active-line' : '';
+        const a = s.arrow;
+
+        svgHtml += `<g class="arrow-group ${stateCls}" onclick="goStep(${i})">`;
+        if (a.type === 'line') {
+          const x1 = NODE_X[a.from];
+          const x2 = NODE_X[a.to] + (NODE_X[a.to] > x1 ? -8 : 8);
+          const midX = (NODE_X[a.from] + NODE_X[a.to]) / 2;
+          const boxW = Math.max(195, a.label.length * 10.5);
+          svgHtml += `
+            <line class="${animCls}" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"
+                  stroke="${c.stroke}" stroke-width="2.5" marker-end="url(#arrow-${s.color})" />
+            <rect x="${midX - boxW / 2}" y="${y - 23}" width="${boxW}" height="20" rx="4" fill="${c.bg}" stroke="${c.stroke}" stroke-opacity="0.25" />
+            <text class="arrow-label" x="${midX}" y="${y - 9}" fill="${c.text}">${a.label}</text>
+          `;
+        } else if (a.type === 'self') {
+          const nx = NODE_X[a.node];
+          const boxW = Math.max(210, a.label.length * 10.5);
+          svgHtml += `
+            <path class="${animCls}" d="M ${nx} ${y - 12} C ${nx + 64} ${y - 12}, ${nx + 64} ${y + 14}, ${nx + 8} ${y + 14}"
+                  fill="none" stroke="${c.stroke}" stroke-width="2.5" marker-end="url(#arrow-${s.color})" />
+            <rect x="${nx - boxW - 12}" y="${y - 10}" width="${boxW}" height="22" rx="4" fill="${c.bg}" stroke="${c.stroke}" stroke-opacity="0.25" />
+            <text class="arrow-label" x="${nx - boxW / 2 - 12}" y="${y + 5}" fill="${c.text}">${a.label}</text>
+          `;
+        }
+        svgHtml += `</g>`;
+      });
+
+      layer.innerHTML = svgHtml;
+    }
+
     function render() {
       const list = SCENARIOS[currentKey], s = list[stepIdx];
-      ['dev', 'tsp', 'iss', 'user'].forEach(id => {
-        document.getElementById('n-' + id).className = 'node' + (s.nodes.includes(id) ? ' hl-' + s.color : '');
+      ['user', 'dev', 'tsp', 'iss'].forEach(id => {
+        const el = document.getElementById('n-' + id);
+        el.setAttribute('class', 'node-box' + (s.nodes.includes(id) ? ' hl-' + s.color : ''));
       });
+
+      renderArrows(list);
+
       document.getElementById('banner').className = 'banner ' + s.color;
       document.getElementById('badge').textContent = s.badge;
       document.getElementById('payload').textContent = s.payload;
@@ -274,7 +398,7 @@
         const d = document.createElement('button');
         d.className = 'dot' + (i === stepIdx ? ' active' : '');
         d.textContent = i + 1;
-        d.onclick = () => { stepIdx = i; render(); };
+        d.onclick = () => goStep(i);
         dots.appendChild(d);
       });
       document.getElementById('btnPrev').disabled = stepIdx === 0;
@@ -283,6 +407,7 @@
 
     document.getElementById('btnPrev').onclick = () => { if (stepIdx > 0) { stepIdx--; render(); } };
     document.getElementById('btnNext').onclick = () => { if (stepIdx < SCENARIOS[currentKey].length - 1) { stepIdx++; render(); } };
+    document.getElementById('btnReset').onclick = () => { stepIdx = 0; render(); };
     render();
   </script>
 </body>
